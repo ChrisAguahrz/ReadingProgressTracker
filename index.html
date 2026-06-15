@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Nursing Module Progress Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+        }
+        .glass-card {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        /* Custom input style to blend with text until editing */
+        .pct-input:disabled {
+            background: transparent;
+            border-color: transparent;
+            color: #ffffff;
+            font-weight: 700;
+            text-align: right;
+            cursor: default;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-7xl mx-auto space-y-8">
+        
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-gray-800">
+            <div>
+                <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                    MED-SURG & CLINICAL MODULE TRACKER
+                </h1>
+                <p class="text-gray-400 mt-2 text-lg">Real-time curriculum completion & study velocity dashboard.</p>
+            </div>
+            <div class="glass-card px-6 py-4 rounded-2xl flex flex-col items-end">
+                <span class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Overall Course Completion</span>
+                <span id="global-pct" class="text-3xl font-black text-cyan-400">0.0%</span>
+            </div>
+        </header>
+
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="glass-card p-6 rounded-2xl shadow-2xl flex flex-col justify-between">
+                <div class="mb-4">
+                    <h3 class="text-xl font-bold text-white">Reading Share Allocation</h3>
+                    <p class="text-xs text-gray-400">Relative weight of curriculum based on module hours</p>
+                </div>
+                <div class="relative w-full max-w-[340px] mx-auto h-[340px]">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 rounded-2xl shadow-2xl flex flex-col justify-between">
+                <div class="mb-4">
+                    <h3 class="text-xl font-bold text-white">Dynamic Completion Status</h3>
+                    <p class="text-xs text-gray-400">Color-coded progress spectrum matching real-time entry updates</p>
+                </div>
+                <div class="relative w-full h-[340px]">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <main class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+            
+            <div class="xl:col-span-2 space-y-4">
+                <div class="flex justify-between items-center px-2">
+                    <h2 class="text-2xl font-bold tracking-wide">Curriculum Breakdown</h2>
+                    <button id="toggle-edit-btn" onclick="toggleGlobalEdit()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold transition-all duration-300 shadow-lg shadow-cyan-900/40 cursor-pointer">
+                        Edit Progress
+                    </button>
+                </div>
+
+                <div id="modules-container" class="space-y-3">
+                    </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="glass-card p-6 rounded-2xl shadow-xl">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Increment Daily Logs
+                    </h3>
+                    <form id="log-form" onsubmit="handleLogSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Select Active Module</label>
+                            <select id="log-module" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500" required>
+                                </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Hours Invested</label>
+                                <input type="number" id="log-hours" step="0.1" min="0.1" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500" placeholder="e.g. 2.5" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Date</label>
+                                <input type="date" id="log-date" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold transition-all text-white shadow-md shadow-emerald-950/50 cursor-pointer">
+                            Commit Daily Progress
+                        </button>
+                    </form>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-xl max-h-[460px] flex flex-col">
+                    <h3 class="text-xl font-bold text-white mb-3">Study Velocity History</h3>
+                    <div id="logs-history" class="overflow-y-auto space-y-3 flex-1 pr-1">
+                        </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Core Curricular Structure mapping precisely to your tracking sheets
+        const initialModules = [
+            { id: "m1", code: "MSN 1208", name: "Hematology", hours: 10, pct: 0 },
+            { id: "m2", code: "MSN 1208", name: "Alimentary/Biliary/Dental Nursing (GIT)", hours: 20, pct: 0 },
+            { id: "m3", code: "MSN 1208", name: "Renal and Genitourinary Nursing (GUD)", hours: 12, pct: 0 },
+            { id: "m4", code: "MSN 1208", name: "Cardiovascular Nursing", hours: 15, pct: 0 },
+            { id: "m5", code: "MSN 1208", name: "Orthopedic Nursing", hours: 16, pct: 0 },
+            { id: "m6", code: "PEN 1204", name: "Pediatric Nursing", hours: 30, pct: 0 },
+            { id: "m7", code: "MSN 1208", name: "ENT Nursing", hours: 10, pct: 0 },
+            { id: "m8", code: "MSN 1208", name: "Perioperative Nursing", hours: 10, pct: 0 },
+            { id: "m9", code: "MSN 1208", name: "Endocrinological Nursing", hours: 15, pct: 0 },
+            { id: "m10", code: "MSN 1208", name: "Neurological Nursing", hours: 15, pct: 0 },
+            { id: "m11", code: "MSN 1208", name: "Dermatological Nursing", hours: 10, pct: 0 },
+            { id: "m12", code: "MSN 1208", name: "Ophthalmic Nursing", hours: 10, pct: 0 },
+            { id: "m13", code: "Gen 1202", name: "Gerontological Nursing", hours: 20, pct: 0 },
+            { id: "m14", code: "Pha 1203", name: "Pharmacology II", hours: 30, pct: 0 }
+        ];
+
+        let modules = JSON.parse(localStorage.getItem('nursing_modules')) || initialModules;
+        let logs = JSON.parse(localStorage.getItem('nursing_logs')) || [];
+        let isEditingMode = false;
+        let barChartInstance = null;
+        let pieChartInstance = null;
+
+        // Set default date picker value to today
+        document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+
+        // Dynamic State-Driven Color Coding Archetype Engine
+        function getColorProfile(pct) {
+            if (pct >= 95) return { hex: '#3b82f6', text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' }; // Blue
+            if (pct >= 80) return { hex: '#065f46', text: 'text-emerald-500', bg: 'bg-emerald-900/20', border: 'border-emerald-800/40' }; // Dark Green
+            if (pct >= 65) return { hex: '#10b981', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }; // Medium Green
+            if (pct >= 50) return { hex: '#22c55e', text: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' }; // Green
+            if (pct >= 40) return { hex: '#f97316', text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' }; // Orange
+            if (pct >= 20) return { hex: '#ef4444', text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' }; // Red
+            return { hex: '#991b1b', text: 'text-red-700', bg: 'bg-red-950/30', border: 'border-red-900/40' }; // Dark Red
+        }
+
+        function calculateGlobalMetrics() {
+            let totalWeightedProgress = 0;
+            let totalHours = 0;
+            modules.forEach(m => {
+                totalWeightedProgress += (m.pct / 100) * m.hours;
+                totalHours += m.hours;
+            });
+            const globalPct = ((totalWeightedProgress / totalHours) * 100).toFixed(1);
+            document.getElementById('global-pct').innerText = `${globalPct}%`;
+        }
+
+        function toggleGlobalEdit() {
+            const btn = document.getElementById('toggle-edit-btn');
+            if (!isEditingMode) {
+                // Enter Mode
+                isEditingMode = true;
+                btn.innerText = "Save Adjustments";
+                btn.classList.replace('from-cyan-600', 'from-amber-600');
+                btn.classList.replace('to-blue-600', 'to-orange-600');
+                document.querySelectorAll('.pct-input').forEach(input => {
+                    input.disabled = false;
+                    input.classList.remove('border-transparent');
+                    input.classList.add('border-gray-600', 'bg-gray-900/90', 'px-2', 'rounded-lg');
+                });
+            } else {
+                // Save Mode & Exit
+                isEditingMode = false;
+                btn.innerText = "Edit Progress";
+                btn.classList.replace('from-amber-600', 'from-cyan-600');
+                btn.classList.replace('to-orange-600', 'to-blue-600');
+                
+                document.querySelectorAll('.pct-input').forEach(input => {
+                    const mid = input.dataset.id;
+                    let val = parseFloat(input.value) || 0;
+                    if(val > 100) val = 100;
+                    if(val < 0) val = 0;
+                    
+                    const targetModule = modules.find(m => m.id === mid);
+                    if(targetModule) targetModule.pct = val;
+                });
+
+                localStorage.setItem('nursing_modules', JSON.stringify(modules));
+                renderUI();
+            }
+        }
+
+        function handleLogSubmit(e) {
+            e.preventDefault();
+            const moduleId = document.getElementById('log-module').value;
+            const hours = parseFloat(document.getElementById('log-hours').value);
+            const date = document.getElementById('log-date').value;
+            
+            const targetModule = modules.find(m => m.id === moduleId);
+            
+            const newLog = {
+                id: 'log_' + Date.now(),
+                moduleName: targetModule.name,
+                code: targetModule.code,
+                hours: hours,
+                date: date
+            };
+
+            logs.unshift(newLog); // Put newest logs at top
+            localStorage.setItem('nursing_logs', JSON.stringify(logs));
+            
+            document.getElementById('log-hours').value = '';
+            renderLogsStream();
+        }
+
+        function deleteLog(logId) {
+            logs = logs.filter(l => l.id !== logId);
+            localStorage.setItem('nursing_logs', JSON.stringify(logs));
+            renderLogsStream();
+        }
+
+        function renderLogsStream() {
+            const container = document.getElementById('logs-history');
+            if(logs.length === 0) {
+                container.innerHTML = `<p class="text-sm text-gray-500 text-center py-8">No session logs tracked yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = logs.map(l => `
+                <div class="p-3 bg-gray-900/50 rounded-xl border border-gray-800 flex justify-between items-center text-sm">
+                    <div>
+                        <div class="font-semibold text-gray-200">${l.moduleName}</div>
+                        <div class="text-xs text-gray-400 mt-0.5">${l.date} &bull; <span class="text-cyan-400 font-medium">${l.code}</span></div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="px-2.5 py-1 rounded-md bg-cyan-950 text-cyan-400 text-xs font-bold border border-cyan-800/30">+${l.hours} hrs</span>
+                        <button onclick="deleteLog('${l.id}')" class="text-gray-500 hover:text-red-400 transition-colors text-xs cursor-pointer">✕</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function initializeStaticSelectors() {
+            const selectEl = document.getElementById('log-module');
+            selectEl.innerHTML = modules.map(m => `<option value="${m.id}">${m.code} - ${m.name}</option>`).join('');
+        }
+
+        function updateCharts() {
+            // Sort modules in descending order exclusively for the data rendering cycle
+            const sortedModules = [...modules].sort((a, b) => b.pct - a.pct);
+            
+            const labels = sortedModules.map(m => m.name);
+            const dataPercentages = sortedModules.map(m => m.pct);
+            const backgroundColors = sortedModules.map(m => getColorProfile(m.pct).hex);
+
+            // Update or Init Bar Chart
+            if (barChartInstance) {
+                barChartInstance.data.labels = labels;
+                barChartInstance.data.datasets[0].data = dataPercentages;
+                barChartInstance.data.datasets[0].backgroundColor = backgroundColors;
+                barChartInstance.update();
+            } else {
+                const ctxBar = document.getElementById('barChart').getContext('2d');
+                barChartInstance = new Chart(ctxBar, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Completion Progress %',
+                            data: dataPercentages,
+                            backgroundColor: backgroundColors,
+                            borderRadius: 6,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { max: 100, min: 0, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
+                            y: { grid: { display: false }, ticks: { color: '#f3f4f6', font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+
+            // Update or Init Pie Chart (Allocation breakdown using structured weights)
+            if (!pieChartInstance) {
+                const ctxPie = document.getElementById('pieChart').getContext('2d');
+                pieChartInstance = new Chart(ctxPie, {
+                    type: 'pie',
+                    data: {
+                        labels: modules.map(m => m.name),
+                        datasets: [{
+                            data: modules.map(m => m.hours),
+                            backgroundColor: [
+                                '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+                                '#ec4899', '#14b8a6', '#6366f1', '#a855f7', '#f43f5e',
+                                '#06b6d4', '#059669', '#d97706', '#b91c1c'
+                            ],
+                            borderWidth: 1,
+                            borderColor: '#0b0f19'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false } // Hidden to preserve minimalist UI footprint
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderUI() {
+            calculateGlobalMetrics();
+            updateCharts();
+            
+            // Sort list elements systematically by descending order of percentage
+            const sortedList = [...modules].sort((a, b) => b.pct - a.pct);
+            const container = document.getElementById('modules-container');
+
+            container.innerHTML = sortedList.map(m => {
+                const cProfile = getColorProfile(m.pct);
+                return `
+                    <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all hover:border-gray-700">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs px-2 py-0.5 rounded font-bold bg-gray-800 text-cyan-400 border border-gray-700">${m.code}</span>
+                                <span class="text-xs text-gray-400 font-medium">${m.hours} Total Curriculum Hours</span>
+                            </div>
+                            <h4 class="text-md font-bold text-white truncate">${m.name}</h4>
+                            
+                            <div class="w-full bg-gray-900 h-1.5 rounded-full mt-3 overflow-hidden">
+                                <div class="h-full transition-all duration-500" style="width: ${m.pct}%; background-color: ${cProfile.hex}"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                            <span class="text-xs px-2.5 py-1 rounded-full uppercase font-bold tracking-wider ${cProfile.text} ${cProfile.bg} border ${cProfile.border}">
+                                ${m.pct}% read
+                            </span>
+                            <div class="flex items-center bg-gray-900/40 border border-gray-800 rounded-lg p-1.5">
+                                <input type="number" 
+                                       class="pct-input w-16 bg-transparent text-right pr-1 font-bold text-white focus:outline-none"
+                                       data-id="${m.id}" 
+                                       value="${m.pct}" 
+                                       min="0" max="100" 
+                                       disabled>
+                                <span class="text-sm text-gray-500 font-bold px-1">%</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // App Initialization Trigger Lifecycle
+        initializeStaticSelectors();
+        renderUI();
+        renderLogsStream();
+    </script>
+</body>
+</html>
