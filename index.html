@@ -49,8 +49,8 @@
         <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="glass-card p-6 rounded-2xl shadow-2xl flex flex-col justify-between">
                 <div class="mb-4">
-                    <h3 class="text-xl font-bold text-white">Reading Share Allocation</h3>
-                    <p class="text-xs text-gray-400">Relative weight of curriculum based on module hours</p>
+                    <h3 class="text-xl font-bold text-white">Study Hour Velocity</h3>
+                    <p class="text-xs text-gray-400">Total hours logged studying each module across all entries</p>
                 </div>
                 <div class="relative w-full max-w-[340px] mx-auto h-[340px]">
                     <canvas id="pieChart"></canvas>
@@ -109,14 +109,22 @@
                     </form>
                 </div>
 
-                <div class="glass-card p-6 rounded-2xl shadow-xl max-h-[460px] flex flex-col">
+                <div class="glass-card p-6 rounded-2xl shadow-xl max-h-[300px] flex flex-col">
                     <h3 class="text-xl font-bold text-white mb-3">Study Velocity History</h3>
                     <div id="logs-history" class="overflow-y-auto space-y-3 flex-1 pr-1">
                         </div>
                 </div>
             </div>
-
         </main>
+
+        <section class="glass-card p-6 rounded-2xl shadow-2xl mt-4">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Exam Pass Prediction Predictive Engine</h2>
+                <p class="text-xs text-gray-400 mt-1">Calculated via a balanced index profile: 60% completion depth metric + 40% historical study velocity footprint (Scaled to a maximum constraint of 9.0/10.0 per variable metric).</p>
+            </div>
+            <div id="prediction-matrix" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                </div>
+        </section>
     </div>
 
     <script>
@@ -172,7 +180,6 @@
         function toggleGlobalEdit() {
             const btn = document.getElementById('toggle-edit-btn');
             if (!isEditingMode) {
-                // Enter Mode
                 isEditingMode = true;
                 btn.innerText = "Save Adjustments";
                 btn.classList.replace('from-cyan-600', 'from-amber-600');
@@ -183,7 +190,6 @@
                     input.classList.add('border-gray-600', 'bg-gray-900/90', 'px-2', 'rounded-lg');
                 });
             } else {
-                // Save Mode & Exit
                 isEditingMode = false;
                 btn.innerText = "Edit Progress";
                 btn.classList.replace('from-amber-600', 'from-cyan-600');
@@ -220,17 +226,17 @@
                 date: date
             };
 
-            logs.unshift(newLog); // Put newest logs at top
+            logs.unshift(newLog);
             localStorage.setItem('nursing_logs', JSON.stringify(logs));
             
             document.getElementById('log-hours').value = '';
-            renderLogsStream();
+            renderUI(); // Render entire UI loop to synchronize the pie chart study hours in real time
         }
 
         function deleteLog(logId) {
             logs = logs.filter(l => l.id !== logId);
             localStorage.setItem('nursing_logs', JSON.stringify(logs));
-            renderLogsStream();
+            renderUI();
         }
 
         function renderLogsStream() {
@@ -259,15 +265,19 @@
             selectEl.innerHTML = modules.map(m => `<option value="${m.id}">${m.code} - ${m.name}</option>`).join('');
         }
 
+        // Extracts actual historical log hours invested per module profile
+        function getLogHoursByModuleName(name) {
+            return logs.filter(l => l.moduleName === name).reduce((sum, l) => sum + l.hours, 0);
+        }
+
         function updateCharts() {
-            // Sort modules in descending order exclusively for the data rendering cycle
             const sortedModules = [...modules].sort((a, b) => b.pct - a.pct);
             
             const labels = sortedModules.map(m => m.name);
             const dataPercentages = sortedModules.map(m => m.pct);
             const backgroundColors = sortedModules.map(m => getColorProfile(m.pct).hex);
 
-            // Update or Init Bar Chart
+            // Update/Render Progress Bar Chart
             if (barChartInstance) {
                 barChartInstance.data.labels = labels;
                 barChartInstance.data.datasets[0].data = dataPercentages;
@@ -300,15 +310,26 @@
                 });
             }
 
-            // Update or Init Pie Chart (Allocation breakdown using structured weights)
-            if (!pieChartInstance) {
+            // MODIFIED: Pie Chart metrics mapped to cumulative logged Study Hour Velocity values
+            const pieDataHours = modules.map(m => getLogHoursByModuleName(m.name));
+            const hasRegisteredLogs = pieDataHours.some(h => h > 0);
+
+            // Visual default fallback if no historical hours have been committed yet
+            const activePieData = hasRegisteredLogs ? pieDataHours : modules.map(() => 1); 
+            const activeLabels = modules.map(m => m.name + (hasRegisteredLogs ? ` (${getLogHoursByModuleName(m.name)} hrs)` : ' (0 hrs)'));
+
+            if (pieChartInstance) {
+                pieChartInstance.data.labels = activeLabels;
+                pieChartInstance.data.datasets[0].data = activePieData;
+                pieChartInstance.update();
+            } else {
                 const ctxPie = document.getElementById('pieChart').getContext('2d');
                 pieChartInstance = new Chart(ctxPie, {
                     type: 'pie',
                     data: {
-                        labels: modules.map(m => m.name),
+                        labels: activeLabels,
                         datasets: [{
-                            data: modules.map(m => m.hours),
+                            data: activePieData,
                             backgroundColor: [
                                 '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
                                 '#ec4899', '#14b8a6', '#6366f1', '#a855f7', '#f43f5e',
@@ -321,19 +342,69 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false } // Hidden to preserve minimalist UI footprint
-                        }
+                        plugins: { legend: { display: false } }
                     }
                 });
             }
         }
 
+        // NEW ENGINE FUNCTION: Computes weighted performance predictions scaled to max 9.0 points
+        function renderExamPredictions() {
+            const container = document.getElementById('prediction-matrix');
+            
+            const modulesWithPerformance = modules.map(m => {
+                const totalStudiedHours = getLogHoursByModuleName(m.name);
+                
+                // 1. Percentage Component (Max 9 points)
+                const percentageScore = (m.pct / 100) * 9;
+                
+                // 2. Velocity Component: Hours Read relative to target curriculum baseline (Max 9 points)
+                let hourScore = (totalStudiedHours / m.hours) * 9;
+                if(hourScore > 9) hourScore = 9; // Ceiling hard limit capping at 9
+                
+                // 3. Formula Aggregation Matrix: (60% Progress Weight) + (40% Velocity Weight)
+                const finalIndexScore = ((percentageScore * 0.6) + (hourScore * 0.4)).toFixed(2);
+                
+                // Grading Rank Classifier
+                let ranking = "Unprepared";
+                let badgeColor = "bg-red-500/10 text-red-400 border-red-500/20";
+                if (finalIndexScore >= 8.0) { ranking = "Distinction Track"; badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20"; }
+                else if (finalIndexScore >= 6.5) { ranking = "High Pass Expected"; badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"; }
+                else if (finalIndexScore >= 4.5) { ranking = "Moderate Pass"; badgeColor = "bg-green-500/10 text-green-400 border-green-500/20"; }
+                else if (finalIndexScore >= 3.0) { ranking = "Marginal Risk Zone"; badgeColor = "bg-orange-500/10 text-orange-400 border-orange-500/20"; }
+
+                return { ...m, finalScore: parseFloat(finalIndexScore), ranking, badgeColor, totalStudiedHours };
+            });
+
+            // Sort by final matrix prediction index in strictly descending order
+            modulesWithPerformance.sort((a, b) => b.finalScore - a.finalScore);
+
+            container.innerHTML = modulesWithPerformance.map(m => `
+                <div class="p-4 bg-gray-900/40 rounded-xl border border-gray-800 flex flex-col justify-between space-y-3">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <span class="text-[11px] px-2 py-0.5 rounded font-bold bg-gray-800 text-gray-400 border border-gray-700">${m.code}</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full font-bold border ${m.badgeColor}">${m.ranking}</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white mt-2 truncate">${m.name}</h4>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-gray-800/60">
+                        <span class="text-xs text-gray-400">Index Score:</span>
+                        <div class="text-right">
+                            <span class="text-xl font-black text-amber-400">${m.finalScore}</span>
+                            <span class="text-[10px] text-gray-500 font-semibold">/ 9.0</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         function renderUI() {
             calculateGlobalMetrics();
             updateCharts();
+            renderExamPredictions();
+            renderLogsStream();
             
-            // Sort list elements systematically by descending order of percentage
             const sortedList = [...modules].sort((a, b) => b.pct - a.pct);
             const container = document.getElementById('modules-container');
 
@@ -344,7 +415,7 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="text-xs px-2 py-0.5 rounded font-bold bg-gray-800 text-cyan-400 border border-gray-700">${m.code}</span>
-                                <span class="text-xs text-gray-400 font-medium">${m.hours} Total Curriculum Hours</span>
+                                <span class="text-xs text-gray-400 font-medium">${m.hours} Target Curriculum Hours &bull; <strong class="text-gray-300">${getLogHoursByModuleName(m.name)} hrs logged</strong></span>
                             </div>
                             <h4 class="text-md font-bold text-white truncate">${m.name}</h4>
                             
@@ -375,7 +446,6 @@
         // App Initialization Trigger Lifecycle
         initializeStaticSelectors();
         renderUI();
-        renderLogsStream();
     </script>
 </body>
 </html>
