@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700&display=swap');
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #0b0f19;
@@ -18,8 +18,8 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        /* Custom input style to blend with text until editing */
-        .pct-input:disabled {
+        /* Custom input configurations */
+        .pct-input:disabled, .rev-input:disabled {
             background: transparent;
             border-color: transparent;
             color: #ffffff;
@@ -120,7 +120,15 @@
         <section class="glass-card p-6 rounded-2xl shadow-2xl mt-4">
             <div class="mb-6">
                 <h2 class="text-2xl font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Exam Pass Prediction Predictive Engine</h2>
-                <p class="text-xs text-gray-400 mt-1">Calculated via a balanced index profile: 60% completion depth metric + 40% historical study velocity footprint (Scaled to a maximum constraint of 9.0/10.0 per variable metric).</p>
+                <div class="text-xs text-gray-400 mt-2 space-y-1 bg-gray-900/40 p-3 rounded-xl border border-gray-800/80">
+                    <p class="font-semibold text-gray-300">Balanced Formula Allocation Weights (Capped at 9.0/10.0 Maximum Constraint):</p>
+                    <ul class="list-disc pl-4 space-y-0.5 text-gray-400">
+                        <li><strong class="text-amber-400">40% Weight:</strong> Active Recall & Revision Progress Depth</li>
+                        <li><strong class="text-cyan-400">35% Weight:</strong> Reading Module Coverage Depth</li>
+                        <li><strong class="text-emerald-400">20% Weight:</strong> Reading Study Velocity (Total Hours Logged)</li>
+                        <li><strong class="text-purple-400">5% Weight:</strong> Per Capita Study index Profile (Study hours relative to curriculum baseline hours weight)</li>
+                    </ul>
+                </div>
             </div>
             <div id="prediction-matrix" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 </div>
@@ -130,29 +138,32 @@
     <script>
         // Core Curricular Structure mapping precisely to your tracking sheets
         const initialModules = [
-            { id: "m1", code: "MSN 1208", name: "Hematology", hours: 10, pct: 0 },
-            { id: "m2", code: "MSN 1208", name: "Alimentary/Biliary/Dental Nursing (GIT)", hours: 20, pct: 0 },
-            { id: "m3", code: "MSN 1208", name: "Renal and Genitourinary Nursing (GUD)", hours: 12, pct: 0 },
-            { id: "m4", code: "MSN 1208", name: "Cardiovascular Nursing", hours: 15, pct: 0 },
-            { id: "m5", code: "MSN 1208", name: "Orthopedic Nursing", hours: 16, pct: 0 },
-            { id: "m6", code: "PEN 1204", name: "Pediatric Nursing", hours: 30, pct: 0 },
-            { id: "m7", code: "MSN 1208", name: "ENT Nursing", hours: 10, pct: 0 },
-            { id: "m8", code: "MSN 1208", name: "Perioperative Nursing", hours: 10, pct: 0 },
-            { id: "m9", code: "MSN 1208", name: "Endocrinological Nursing", hours: 15, pct: 0 },
-            { id: "m10", code: "MSN 1208", name: "Neurological Nursing", hours: 15, pct: 0 },
-            { id: "m11", code: "MSN 1208", name: "Dermatological Nursing", hours: 10, pct: 0 },
-            { id: "m12", code: "MSN 1208", name: "Ophthalmic Nursing", hours: 10, pct: 0 },
-            { id: "m13", code: "Gen 1202", name: "Gerontological Nursing", hours: 20, pct: 0 },
-            { id: "m14", code: "Pha 1203", name: "Pharmacology II", hours: 30, pct: 0 }
+            { id: "m1", code: "MSN 1208", name: "Hematology", hours: 10, pct: 0, revPct: 0 },
+            { id: "m2", code: "MSN 1208", name: "Alimentary/Biliary/Dental Nursing (GIT)", hours: 20, pct: 0, revPct: 0 },
+            { id: "m3", code: "MSN 1208", name: "Renal and Genitourinary Nursing (GUD)", hours: 12, pct: 0, revPct: 0 },
+            { id: "m4", code: "MSN 1208", name: "Cardiovascular Nursing", hours: 15, pct: 0, revPct: 0 },
+            { id: "m5", code: "MSN 1208", name: "Orthopedic Nursing", hours: 16, pct: 0, revPct: 0 },
+            { id: "m6", code: "PEN 1204", name: "Pediatric Nursing", hours: 30, pct: 0, revPct: 0 },
+            { id: "m7", code: "MSN 1208", name: "ENT Nursing", hours: 10, pct: 0, revPct: 0 },
+            { id: "m8", code: "MSN 1208", name: "Perioperative Nursing", hours: 10, pct: 0, revPct: 0 },
+            { id: "m9", code: "MSN 1208", name: "Endocrinological Nursing", hours: 15, pct: 0, revPct: 0 },
+            { id: "m10", code: "MSN 1208", name: "Neurological Nursing", hours: 15, pct: 0, revPct: 0 },
+            { id: "m11", code: "MSN 1208", name: "Dermatological Nursing", hours: 10, pct: 0, revPct: 0 },
+            { id: "m12", code: "MSN 1208", name: "Ophthalmic Nursing", hours: 10, pct: 0, revPct: 0 },
+            { id: "m13", code: "Gen 1202", name: "Gerontological Nursing", hours: 20, pct: 0, revPct: 0 },
+            { id: "m14", code: "Pha 1203", name: "Pharmacology II", hours: 30, pct: 0, revPct: 0 }
         ];
 
         let modules = JSON.parse(localStorage.getItem('nursing_modules')) || initialModules;
         let logs = JSON.parse(localStorage.getItem('nursing_logs')) || [];
+        
+        // Ensure legacy dataset schemas gracefully integrate the newly requested recall property without losing records
+        modules.forEach(m => { if(m.revPct === undefined) m.revPct = 0; });
+
         let isEditingMode = false;
         let barChartInstance = null;
         let pieChartInstance = null;
 
-        // Set default date picker value to today
         document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
 
         // Dynamic State-Driven Color Coding Archetype Engine
@@ -184,7 +195,7 @@
                 btn.innerText = "Save Adjustments";
                 btn.classList.replace('from-cyan-600', 'from-amber-600');
                 btn.classList.replace('to-blue-600', 'to-orange-600');
-                document.querySelectorAll('.pct-input').forEach(input => {
+                document.querySelectorAll('.pct-input, .rev-input').forEach(input => {
                     input.disabled = false;
                     input.classList.remove('border-transparent');
                     input.classList.add('border-gray-600', 'bg-gray-900/90', 'px-2', 'rounded-lg');
@@ -195,14 +206,22 @@
                 btn.classList.replace('from-amber-600', 'from-cyan-600');
                 btn.classList.replace('to-orange-600', 'to-blue-600');
                 
+                // Track reading adjustments
                 document.querySelectorAll('.pct-input').forEach(input => {
                     const mid = input.dataset.id;
                     let val = parseFloat(input.value) || 0;
-                    if(val > 100) val = 100;
-                    if(val < 0) val = 0;
-                    
+                    if(val > 100) val = 100; if(val < 0) val = 0;
                     const targetModule = modules.find(m => m.id === mid);
                     if(targetModule) targetModule.pct = val;
+                });
+
+                // Track recall/revision adjustments
+                document.querySelectorAll('.rev-input').forEach(input => {
+                    const mid = input.dataset.id;
+                    let val = parseFloat(input.value) || 0;
+                    if(val > 100) val = 100; if(val < 0) val = 0;
+                    const targetModule = modules.find(m => m.id === mid);
+                    if(targetModule) targetModule.revPct = val;
                 });
 
                 localStorage.setItem('nursing_modules', JSON.stringify(modules));
@@ -230,7 +249,7 @@
             localStorage.setItem('nursing_logs', JSON.stringify(logs));
             
             document.getElementById('log-hours').value = '';
-            renderUI(); // Render entire UI loop to synchronize the pie chart study hours in real time
+            renderUI();
         }
 
         function deleteLog(logId) {
@@ -265,7 +284,6 @@
             selectEl.innerHTML = modules.map(m => `<option value="${m.id}">${m.code} - ${m.name}</option>`).join('');
         }
 
-        // Extracts actual historical log hours invested per module profile
         function getLogHoursByModuleName(name) {
             return logs.filter(l => l.moduleName === name).reduce((sum, l) => sum + l.hours, 0);
         }
@@ -277,7 +295,6 @@
             const dataPercentages = sortedModules.map(m => m.pct);
             const backgroundColors = sortedModules.map(m => getColorProfile(m.pct).hex);
 
-            // Update/Render Progress Bar Chart
             if (barChartInstance) {
                 barChartInstance.data.labels = labels;
                 barChartInstance.data.datasets[0].data = dataPercentages;
@@ -310,11 +327,9 @@
                 });
             }
 
-            // MODIFIED: Pie Chart metrics mapped to cumulative logged Study Hour Velocity values
             const pieDataHours = modules.map(m => getLogHoursByModuleName(m.name));
             const hasRegisteredLogs = pieDataHours.some(h => h > 0);
 
-            // Visual default fallback if no historical hours have been committed yet
             const activePieData = hasRegisteredLogs ? pieDataHours : modules.map(() => 1); 
             const activeLabels = modules.map(m => m.name + (hasRegisteredLogs ? ` (${getLogHoursByModuleName(m.name)} hrs)` : ' (0 hrs)'));
 
@@ -348,24 +363,35 @@
             }
         }
 
-        // NEW ENGINE FUNCTION: Computes weighted performance predictions scaled to max 9.0 points
+        // NEW LOGIC: Refined 9.0 point algorithm with structural scaling constraints
         function renderExamPredictions() {
             const container = document.getElementById('prediction-matrix');
             
             const modulesWithPerformance = modules.map(m => {
                 const totalStudiedHours = getLogHoursByModuleName(m.name);
                 
-                // 1. Percentage Component (Max 9 points)
-                const percentageScore = (m.pct / 100) * 9;
+                // Variable A: Recall / Revision Progress (40% Weight, Scale 0-9.0)
+                const scoreRecall = (m.revPct / 100) * 9;
                 
-                // 2. Velocity Component: Hours Read relative to target curriculum baseline (Max 9 points)
-                let hourScore = (totalStudiedHours / m.hours) * 9;
-                if(hourScore > 9) hourScore = 9; // Ceiling hard limit capping at 9
+                // Variable B: Reading Progress (35% Weight, Scale 0-9.0)
+                const scoreReading = (m.pct / 100) * 9;
                 
-                // 3. Formula Aggregation Matrix: (60% Progress Weight) + (40% Velocity Weight)
-                const finalIndexScore = ((percentageScore * 0.6) + (hourScore * 0.4)).toFixed(2);
+                // Variable C: Reading Velocity Hours (20% Weight, Scale 0-9.0, arbitrary 30-hour cap for max speed profile optimization)
+                let scoreVelocity = (totalStudiedHours / 30) * 9;
+                if(scoreVelocity > 9) scoreVelocity = 9;
                 
-                // Grading Rank Classifier
+                // Variable D: Per Capita Study Index (5% Weight, Scale 0-9.0, Velocity Hours relative to curriculum baseline baseline hours)
+                let scorePerCapita = m.hours > 0 ? (totalStudiedHours / m.hours) * 9 : 0;
+                if(scorePerCapita > 9) scorePerCapita = 9;
+
+                // Aggregation Formula Core Index calculation
+                const finalIndexScore = (
+                    (scoreRecall * 0.40) + 
+                    (scoreReading * 0.35) + 
+                    (scoreVelocity * 0.20) + 
+                    (scorePerCapita * 0.05)
+                ).toFixed(2);
+                
                 let ranking = "Unprepared";
                 let badgeColor = "bg-red-500/10 text-red-400 border-red-500/20";
                 if (finalIndexScore >= 8.0) { ranking = "Distinction Track"; badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20"; }
@@ -373,10 +399,9 @@
                 else if (finalIndexScore >= 4.5) { ranking = "Moderate Pass"; badgeColor = "bg-green-500/10 text-green-400 border-green-500/20"; }
                 else if (finalIndexScore >= 3.0) { ranking = "Marginal Risk Zone"; badgeColor = "bg-orange-500/10 text-orange-400 border-orange-500/20"; }
 
-                return { ...m, finalScore: parseFloat(finalIndexScore), ranking, badgeColor, totalStudiedHours };
+                return { ...m, finalScore: parseFloat(finalIndexScore), ranking, badgeColor };
             });
 
-            // Sort by final matrix prediction index in strictly descending order
             modulesWithPerformance.sort((a, b) => b.finalScore - a.finalScore);
 
             container.innerHTML = modulesWithPerformance.map(m => `
@@ -409,34 +434,56 @@
             const container = document.getElementById('modules-container');
 
             container.innerHTML = sortedList.map(m => {
-                const cProfile = getColorProfile(m.pct);
+                const readProfile = getColorProfile(m.pct);
+                const revProfile = getColorProfile(m.revPct);
                 return `
-                    <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all hover:border-gray-700">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="text-xs px-2 py-0.5 rounded font-bold bg-gray-800 text-cyan-400 border border-gray-700">${m.code}</span>
-                                <span class="text-xs text-gray-400 font-medium">${m.hours} Target Curriculum Hours &bull; <strong class="text-gray-300">${getLogHoursByModuleName(m.name)} hrs logged</strong></span>
-                            </div>
-                            <h4 class="text-md font-bold text-white truncate">${m.name}</h4>
-                            
-                            <div class="w-full bg-gray-900 h-1.5 rounded-full mt-3 overflow-hidden">
-                                <div class="h-full transition-all duration-500" style="width: ${m.pct}%; background-color: ${cProfile.hex}"></div>
+                    <div class="glass-card p-4 rounded-xl flex flex-col space-y-4 transition-all hover:border-gray-700">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-xs px-2 py-0.5 rounded font-bold bg-gray-800 text-cyan-400 border border-gray-700">${m.code}</span>
+                                    <span class="text-xs text-gray-400 font-medium">${m.hours} Target Hours &bull; <strong class="text-gray-300">${getLogHoursByModuleName(m.name)} hrs logged</strong></span>
+                                </div>
+                                <h4 class="text-md font-bold text-white truncate">${m.name}</h4>
                             </div>
                         </div>
-                        
-                        <div class="flex items-center gap-3 w-full md:w-auto justify-end">
-                            <span class="text-xs px-2.5 py-1 rounded-full uppercase font-bold tracking-wider ${cProfile.text} ${cProfile.bg} border ${cProfile.border}">
-                                ${m.pct}% read
-                            </span>
-                            <div class="flex items-center bg-gray-900/40 border border-gray-800 rounded-lg p-1.5">
-                                <input type="number" 
-                                       class="pct-input w-16 bg-transparent text-right pr-1 font-bold text-white focus:outline-none"
-                                       data-id="${m.id}" 
-                                       value="${m.pct}" 
-                                       min="0" max="100" 
-                                       disabled>
-                                <span class="text-sm text-gray-500 font-bold px-1">%</span>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-800/40">
+                            
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-gray-400 font-medium uppercase tracking-wider">Reading Progress</span>
+                                    <div class="flex items-center bg-gray-900/60 border border-gray-800/80 rounded-lg p-1">
+                                        <input type="number" 
+                                               class="pct-input w-12 bg-transparent text-right pr-0.5 font-bold text-white focus:outline-none"
+                                               data-id="${m.id}" 
+                                               value="${m.pct}" 
+                                               min="0" max="100" disabled>
+                                        <span class="text-[11px] text-gray-500 font-bold px-0.5">%</span>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-gray-900 h-2 rounded-full overflow-hidden">
+                                    <div class="h-full transition-all duration-500" style="width: ${m.pct}%; background-color: ${readProfile.hex}"></div>
+                                </div>
                             </div>
+
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-gray-400 font-medium uppercase tracking-wider">Recall / Revision Progress</span>
+                                    <div class="flex items-center bg-gray-900/60 border border-gray-800/80 rounded-lg p-1">
+                                        <input type="number" 
+                                               class="rev-input w-12 bg-transparent text-right pr-0.5 font-bold text-white focus:outline-none"
+                                               data-id="${m.id}" 
+                                               value="${m.revPct}" 
+                                               min="0" max="100" disabled>
+                                        <span class="text-[11px] text-gray-500 font-bold px-0.5">%</span>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-gray-900 h-2 rounded-full overflow-hidden">
+                                    <div class="h-full transition-all duration-500" style="width: ${m.revPct}%; background-color: ${revProfile.hex}"></div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 `;
