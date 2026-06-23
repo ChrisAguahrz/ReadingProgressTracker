@@ -55,28 +55,34 @@
                 <div>
                     <h3 class="text-lg font-bold text-white flex items-center gap-2">
                         <span class="flex h-3 w-3 relative">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
                         </span>
-                        Active Linear Time-Decay Index
+                        Exam Calibration Benchmark Matrix
                     </h3>
                     <p class="text-xs text-gray-400">
-                        Penalizes score automatically every 24 hours as time diminishes. If your progress stands still, your score drops. Target: <strong class="text-amber-400">June 4th deadline</strong>.
+                        Solid bar represents your current actual progress. Faded bar displays where you <span class="text-amber-400 font-semibold">logarithmically ought to be today</span> to secure a safe trajectory before <strong class="text-cyan-400">July 4th</strong>.
                     </p>
                 </div>
                 <div class="flex gap-6 text-right">
                     <div>
                         <span id="days-remaining-badge" class="text-2xl font-black text-amber-400">--</span>
-                        <span class="text-xs text-gray-500 block">Days Left to Target</span>
+                        <span class="text-xs text-gray-500 block">Days Left to Exam</span>
                     </div>
                     <div>
                         <span id="target-index-val" class="text-2xl font-black text-cyan-400">0.0%</span>
-                        <span class="text-xs text-gray-500 block">Time-Diminished Value</span>
+                        <span class="text-xs text-gray-500 block">Actual Study Position</span>
+                    </div>
+                    <div>
+                        <span id="expected-index-val" class="text-2xl font-black text-amber-500/80">0.0%</span>
+                        <span class="text-xs text-gray-500 block">Logarithmic Milestone Target</span>
                     </div>
                 </div>
             </div>
-            <div class="w-full bg-gray-950 h-5 rounded-full p-1 overflow-hidden border border-gray-800">
-                <div id="target-index-bar" class="h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+            
+            <div class="w-full bg-gray-950 h-6 rounded-full p-1 relative border border-gray-800 overflow-hidden">
+                <div id="expected-target-bar" class="absolute top-1 bottom-1 left-1 rounded-full bg-amber-500/20 border border-amber-500/40 transition-all duration-700" style="width: 0%; z-index: 10;"></div>
+                <div id="target-index-bar" class="h-full rounded-full transition-all duration-700 relative" style="width: 0%; z-index: 20;"></div>
             </div>
         </section>
 
@@ -248,12 +254,11 @@
         document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
 
         function getColorProfile(pct) {
-            if (pct >= 95) return { hex: '#3b82f6', text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' };
-            if (pct >= 80) return { hex: '#065f46', text: 'text-emerald-500', bg: 'bg-emerald-900/20', border: 'border-emerald-800/40' };
-            if (pct >= 65) return { hex: '#10b981', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
-            if (pct >= 50) return { hex: '#f97316', text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' };
-            if (pct >= 20) return { hex: '#ef4444', text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' };
-            return { hex: '#991b1b', text: 'text-red-700', bg: 'bg-red-950/30', border: 'border-red-900/40' };
+            if (pct >= 95) return { hex: '#3b82f6', text: 'text-blue-400' };
+            if (pct >= 80) return { hex: '#0ea5e9', text: 'text-cyan-400' };
+            if (pct >= 65) return { hex: '#10b981', text: 'text-emerald-400' };
+            if (pct >= 45) return { hex: '#f97316', text: 'text-orange-400' };
+            return { hex: '#ef4444', text: 'text-red-400' };
         }
 
         function calculateSinglePredictiveMean(m) {
@@ -292,41 +297,47 @@
             document.getElementById('global-pct').innerText = `${finalGlobalRead.toFixed(1)}%`;
             document.getElementById('global-rev').innerText = `${finalGlobalRev.toFixed(1)}%`;
 
-            // Setup Target Boundaries
-            const targetDate = new Date("2026-06-04");
+            // Explicit target tracking parameters for July 4th
+            const targetDate = new Date("2026-07-04");
             const today = new Date();
             
-            // Calculate baseline total study window starting from the oldest log entry (fallback to 14 days ago)
-            let baseStartDate = new Date();
-            baseStartDate.setDate(baseStartDate.getDate() - 14);
+            // Set dynamic baseline to track total window space starting from first operational log entry
+            let startOfWindow = new Date("2026-05-15"); 
             if(logs.length > 0) {
-                const legacyDates = logs.map(l => new Date(l.date).getTime());
-                baseStartDate = new Date(Math.min(...legacyDates));
+                const chronologicalLogs = logs.map(l => new Date(l.date).getTime());
+                startOfWindow = new Date(Math.min(...chronologicalLogs));
             }
 
-            const totalTimelineWindow = Math.max(1, Math.ceil((targetDate.getTime() - baseStartDate.getTime()) / (1000 * 3600 * 24)));
+            const totalStudySpanDays = Math.max(1, Math.ceil((targetDate.getTime() - startOfWindow.getTime()) / (1000 * 3600 * 24)));
+            const currentDaysSpent = Math.max(0, Math.ceil((today.getTime() - startOfWindow.getTime()) / (1000 * 3600 * 24)));
+            
             const timeDiffLeft = targetDate.getTime() - today.getTime();
             let daysRemaining = Math.ceil(timeDiffLeft / (1000 * 3600 * 24));
             if (daysRemaining < 0) daysRemaining = 0;
             
             document.getElementById('days-remaining-badge').innerText = daysRemaining;
 
-            // Structural progress following requested composite standard (40% Read / 60% Recall)
+            // Direct progress mapping: strictly following target weighting criteria
             const structuralProgressScore = (finalGlobalRead * 0.40) + (finalGlobalRev * 0.60);
+            document.getElementById('target-index-val').innerText = `${structuralProgressScore.toFixed(1)}%`;
             
-            // Linear Time-Decay Factor: As daysRemaining shrinks relative to total window, score diminishes if progress is stationary
-            let timeRatio = daysRemaining / totalTimelineWindow;
-            if(timeRatio > 1) timeRatio = 1;
-            if(timeRatio < 0) timeRatio = 0;
+            // Logarithmic Standard Target curve estimation formula:
+            // Ensures progress acceleration expectation mirrors heavy late-cycle revisions
+            let progressRatio = currentDaysSpent / totalStudySpanDays;
+            if(progressRatio > 1) progressRatio = 1;
+            if(progressRatio <= 0) progressRatio = 0.01;
 
-            // If progress isn't 100%, the remaining path is actively compressed by time depletion
-            const finalTimeDecayIndexScore = Math.max(0, Math.min(structuralProgressScore * (0.5 + (timeRatio * 0.5)), 100));
+            const expectedLogarithmicTarget = Math.min(100, Math.max(0, (Math.log(progressRatio * 9 + 1) / Math.log(10)) * 100));
+            document.getElementById('expected-index-val').innerText = `${expectedLogarithmicTarget.toFixed(1)}%`;
 
-            document.getElementById('target-index-val').innerText = `${finalTimeDecayIndexScore.toFixed(1)}%`;
-            
-            const trackingIndexBar = document.getElementById('target-index-bar');
-            trackingIndexBar.style.width = `${finalTimeDecayIndexScore}%`;
-            trackingIndexBar.style.backgroundColor = getColorProfile(finalTimeDecayIndexScore).hex;
+            // Adjust main foreground actual bar indicators
+            const actualProgressBar = document.getElementById('target-index-bar');
+            actualProgressBar.style.width = `${structuralProgressScore}%`;
+            actualProgressBar.style.backgroundColor = getColorProfile(structuralProgressScore).hex;
+
+            // Render background target overlay boundary
+            const backgroundTargetBar = document.getElementById('expected-target-bar');
+            backgroundTargetBar.style.width = `${expectedLogarithmicTarget}%`;
         }
 
         function toggleGlobalEdit() {
@@ -457,7 +468,7 @@
         }
 
         function updateCharts() {
-            // Sort modules based completely on custom composite weight criteria: 60% Recall / 40% Read
+            // Sorting strategy maps directly via core custom criteria performance index: 60% Active Recall / 40% Reading
             const sortedModules = [...modules].sort((a, b) => {
                 const profileA = (a.revPct * 0.60) + (a.pct * 0.40);
                 const profileB = (b.revPct * 0.60) + (b.pct * 0.40);
@@ -682,7 +693,7 @@
                 return { ...m, finalScore: finalIndexScore, ranking, badgeColor };
             });
 
-            // Sort container items strictly by custom composite weighted performance criteria (60% Recall / 40% Read)
+            // Sort dashboard columns directly via custom evaluation profile standard (60% Active Recall / 40% Read)
             modulesWithPerformance.sort((a, b) => {
                 const scoreA = (a.revPct * 0.60) + (a.pct * 0.40);
                 const scoreB = (b.revPct * 0.60) + (b.pct * 0.40);
@@ -716,7 +727,7 @@
             renderExamPredictions();
             renderLogsStream();
             
-            // Sort primary interface containers strictly by composite standard profile: 60% Recall / 40% Reading
+            // Primary lists explicitly sorted via custom evaluation layout standard (60% Active Recall / 40% Read)
             const sortedList = [...modules].sort((a, b) => {
                 const scoreA = (a.revPct * 0.60) + (a.pct * 0.40);
                 const scoreB = (b.revPct * 0.60) + (b.pct * 0.40);
