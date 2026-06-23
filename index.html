@@ -18,12 +18,11 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .pct-input:disabled, .rev-input:disabled {
+        .pct-input:disabled, .rev-input:disabled, .cat-score-input:disabled, .cat-max-input:disabled {
             background: transparent;
             border-color: transparent;
             color: #ffffff;
             font-weight: 700;
-            text-align: right;
             cursor: default;
         }
     </style>
@@ -51,6 +50,28 @@
             </div>
         </header>
 
+        <section class="glass-card p-6 rounded-2xl shadow-xl space-y-3">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span class="flex h-3 w-3 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+                        </span>
+                        Exam Countdown Target Index (Target: 92.8% by June 4th)
+                    </h3>
+                    <p class="text-xs text-gray-400">Weighted Matrix blending: 40% Reading Coverage + 60% Active Recall Index against target milestones (97% Read / 90% Recalled).</p>
+                </div>
+                <div class="text-right">
+                    <span id="target-index-val" class="text-2xl font-black text-cyan-400">0.0%</span>
+                    <span class="text-xs text-gray-500 block">Current Unified Standing</span>
+                </div>
+            </div>
+            <div class="w-full bg-gray-950 h-5 rounded-full p-1 overflow-hidden border border-gray-800">
+                <div id="target-index-bar" class="h-full rounded-full transition-all duration-700 style='width: 0%'"></div>
+            </div>
+        </section>
+
         <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="glass-card p-6 rounded-2xl shadow-2xl flex flex-col justify-between">
                 <div class="mb-4">
@@ -70,6 +91,16 @@
                 <div class="relative w-full h-[340px]">
                     <canvas id="barChart"></canvas>
                 </div>
+            </div>
+        </section>
+
+        <section class="glass-card p-6 rounded-2xl shadow-2xl">
+            <div class="mb-4">
+                <h3 class="text-xl font-bold text-white">Daily Study Timeline Tracking Velocity</h3>
+                <p class="text-xs text-gray-400">Historical continuous chronological matrix footprint. Blank study days map automatically to 0.0 hours.</p>
+            </div>
+            <div class="relative w-full h-[240px]">
+                <canvas id="lineChart"></canvas>
             </div>
         </section>
 
@@ -122,6 +153,34 @@
             </div>
         </main>
 
+        <section class="glass-card p-6 rounded-2xl shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold bg-gradient-to-r from-teal-400 to-emerald-400 bg-clip-text text-transparent">Continuous Assessment Test (CAT) Evaluation Matrix</h2>
+                    <p class="text-xs text-gray-400 mt-1">Calculates Sem Paper requirements out of 100 to strike an aggregate 75% 'A' boundary score (CAT accounts for 30%, Exam 70%). Sorted by performance variance.</p>
+                </div>
+                <button id="toggle-cat-btn" onclick="toggleCatEdit()" class="px-5 py-2 rounded-xl bg-gray-800 text-gray-200 border border-gray-700 font-semibold hover:bg-gray-700 text-xs transition cursor-pointer">
+                    Edit CAT Marks
+                </button>
+            </div>
+            <div class="overflow-x-auto rounded-xl border border-gray-800">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-900/80 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
+                            <th class="p-4">Module Code/Name</th>
+                            <th class="p-4 text-center">Score obtained</th>
+                            <th class="p-4 text-center">Out Of</th>
+                            <th class="p-4 text-center">CAT Weight (30%)</th>
+                            <th class="p-4 text-center">Exam Mark Needed (/100) for A</th>
+                            <th class="p-4 pl-6">Status Comment Directive</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cat-matrix-body" class="divide-y divide-gray-800/60 text-sm">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
         <section class="glass-card p-6 rounded-2xl shadow-2xl mt-4">
             <div class="mb-6">
                 <h2 class="text-2xl font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Exam Pass Prediction Predictive Engine</h2>
@@ -142,46 +201,52 @@
 
     <script>
         const initialModules = [
-            { id: "m1", code: "MSN 1208", name: "Hematology", hours: 10, pct: 0, revPct: 0 },
-            { id: "m2", code: "MSN 1208", name: "Alimentary/Biliary/Dental Nursing (GIT)", hours: 20, pct: 0, revPct: 0 },
-            { id: "m3", code: "MSN 1208", name: "Renal and Genitourinary Nursing (GUD)", hours: 12, pct: 0, revPct: 0 },
-            { id: "m4", code: "MSN 1208", name: "Cardiovascular Nursing", hours: 15, pct: 0, revPct: 0 },
-            { id: "m5", code: "MSN 1208", name: "Orthopedic Nursing", hours: 16, pct: 0, revPct: 0 },
-            { id: "m6", code: "PEN 1204", name: "Pediatric Nursing", hours: 30, pct: 0, revPct: 0 },
-            { id: "m7", code: "MSN 1208", name: "ENT Nursing", hours: 10, pct: 0, revPct: 0 },
-            { id: "m8", code: "MSN 1208", name: "Perioperative Nursing", hours: 10, pct: 0, revPct: 0 },
-            { id: "m9", code: "MSN 1208", name: "Endocrinological Nursing", hours: 15, pct: 0, revPct: 0 },
-            { id: "m10", code: "MSN 1208", name: "Neurological Nursing", hours: 15, pct: 0, revPct: 0 },
-            { id: "m11", code: "MSN 1208", name: "Dermatological Nursing", hours: 10, pct: 0, revPct: 0 },
-            { id: "m12", code: "MSN 1208", name: "Ophthalmic Nursing", hours: 10, pct: 0, revPct: 0 },
-            { id: "m13", code: "Gen 1202", name: "Gerontological Nursing", hours: 20, pct: 0, revPct: 0 },
-            { id: "m14", code: "Pha 1203", name: "Pharmacology II", hours: 30, pct: 0, revPct: 0 }
+            { id: "m1", code: "MSN 1208", name: "Hematology", hours: 10, pct: 0, revPct: 0, catScore: 26, catMax: 30 },
+            { id: "m2", code: "MSN 1208", name: "Alimentary/Biliary/Dental Nursing (GIT)", hours: 20, pct: 0, revPct: 0, catScore: 37, catMax: 50 },
+            { id: "m3", code: "MSN 1208", name: "Renal and Genitourinary Nursing (GUD)", hours: 12, pct: 0, revPct: 0, catScore: 40, catMax: 50 },
+            { id: "m4", code: "MSN 1208", name: "Cardiovascular Nursing", hours: 15, pct: 0, revPct: 0, catScore: 34, catMax: 50 },
+            { id: "m5", code: "MSN 1208", name: "Orthopedic Nursing", hours: 16, pct: 0, revPct: 0, catScore: 24, catMax: 30 },
+            { id: "m6", code: "PEN 1204", name: "Pediatric Nursing", hours: 30, pct: 0, revPct: 0, catScore: 18, catMax: 30 },
+            { id: "m7", code: "MSN 1208", name: "ENT Nursing", hours: 10, pct: 0, revPct: 0, catScore: 0, catMax: 30 },
+            { id: "m8", code: "MSN 1208", name: "Perioperative Nursing", hours: 10, pct: 0, revPct: 0, catScore: 28, catMax: 30 },
+            { id: "m9", code: "MSN 1208", name: "Endocrinological Nursing", hours: 15, pct: 0, revPct: 0, catScore: 27, catMax: 30 },
+            { id: "m10", code: "MSN 1208", name: "Neurological Nursing", hours: 15, pct: 0, revPct: 0, catScore: 27, catMax: 30 },
+            { id: "m11", code: "MSN 1208", name: "Dermatological Nursing", hours: 10, pct: 0, revPct: 0, catScore: 0, catMax: 30 },
+            { id: "m12", code: "MSN 1208", name: "Ophthalmic Nursing", hours: 10, pct: 0, revPct: 0, catScore: 0, catMax: 30 },
+            { id: "m13", code: "Gen 1202", name: "Gerontological Nursing", hours: 20, pct: 0, revPct: 0, catScore: 28, catMax: 30 },
+            { id: "m14", code: "Pha 1203", name: "Pharmacology II", hours: 30, pct: 0, revPct: 0, catScore: 26, catMax: 30 }
         ];
 
         let modules = JSON.parse(localStorage.getItem('nursing_modules')) || initialModules;
         let logs = JSON.parse(localStorage.getItem('nursing_logs')) || [];
         
+        // Safety initialization migration layers to safely absorb new properties without breaking existing records
         modules.forEach(m => { 
             if(m.revPct === undefined) m.revPct = 0; 
+            if(m.catScore === undefined) {
+                const legacyMatch = initialModules.find(im => im.name === m.name);
+                m.catScore = legacyMatch ? legacyMatch.catScore : 0;
+                m.catMax = legacyMatch ? legacyMatch.catMax : 30;
+            }
         });
 
         let isEditingMode = false;
+        let isCatEditingMode = false;
         let barChartInstance = null;
         let pieChartInstance = null;
+        let lineChartInstance = null;
 
         document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
 
         function getColorProfile(pct) {
-            if (pct >= 95) return { hex: '#3b82f6', text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' };
-            if (pct >= 80) return { hex: '#065f46', text: 'text-emerald-500', bg: 'bg-emerald-900/20', border: 'border-emerald-800/40' };
-            if (pct >= 65) return { hex: '#10b981', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
-            if (pct >= 50) return { hex: '#22c55e', text: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' };
-            if (pct >= 40) return { hex: '#f97316', text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' };
-            if (pct >= 20) return { hex: '#ef4444', text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' };
-            return { hex: '#991b1b', text: 'text-red-700', bg: 'bg-red-950/30', border: 'border-red-900/40' };
+            if (pct >= 95) return { hex: '#3b82f6', text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' }; // Blue
+            if (pct >= 80) return { hex: '#065f46', text: 'text-emerald-500', bg: 'bg-emerald-900/20', border: 'border-emerald-800/40' }; // Dark Green
+            if (pct >= 65) return { hex: '#10b981', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }; // Green
+            if (pct >= 50) return { hex: '#f97316', text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' }; // Orange
+            if (pct >= 20) return { hex: '#ef4444', text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' }; // Red
+            return { hex: '#991b1b', text: 'text-red-700', bg: 'bg-red-950/30', border: 'border-red-900/40' }; // Dark Red
         }
 
-        // Functional Engine: Evaluates explicit single module final expected index score
         function calculateSinglePredictiveMean(m) {
             const totalStudiedHours = getLogHoursByModuleName(m.name);
             const scoreRecall = (m.revPct / 100) * 9;
@@ -212,8 +277,19 @@
                 totalHours += m.hours;
             });
             
-            document.getElementById('global-pct').innerText = `${((totalWeightedRead / totalHours) * 100).toFixed(1)}%`;
-            document.getElementById('global-rev').innerText = `${((totalWeightedRev / totalHours) * 100).toFixed(1)}%`;
+            const finalGlobalRead = totalHours > 0 ? (totalWeightedRead / totalHours) * 100 : 0;
+            const finalGlobalRev = totalHours > 0 ? (totalWeightedRev / totalHours) * 100 : 0;
+
+            document.getElementById('global-pct').innerText = `${finalGlobalRead.toFixed(1)}%`;
+            document.getElementById('global-rev').innerText = `${finalGlobalRev.toFixed(1)}%`;
+
+            // Unified Progress Index calculation: (40% Read standing + 60% Recall standing)
+            const trackingIndexScore = (finalGlobalRead * 0.40) + (finalGlobalRev * 0.60);
+            document.getElementById('target-index-val').innerText = `${trackingIndexScore.toFixed(1)}%`;
+            
+            const trackingIndexBar = document.getElementById('target-index-bar');
+            trackingIndexBar.style.width = `${Math.min(trackingIndexScore, 100)}%`;
+            trackingIndexBar.style.backgroundColor = getColorProfile(trackingIndexScore).hex;
         }
 
         function toggleGlobalEdit() {
@@ -248,6 +324,37 @@
                     if(val > 100) val = 100; if(val < 0) val = 0;
                     const targetModule = modules.find(m => m.id === mid);
                     if(targetModule) targetModule.revPct = val;
+                });
+
+                localStorage.setItem('nursing_modules', JSON.stringify(modules));
+                renderUI();
+            }
+        }
+
+        function toggleCatEdit() {
+            const btn = document.getElementById('toggle-cat-btn');
+            if(!isCatEditingMode) {
+                isCatEditingMode = true;
+                btn.innerText = "Save CAT Scores";
+                btn.classList.add('bg-emerald-600', 'text-white');
+                document.querySelectorAll('.cat-score-input, .cat-max-input').forEach(input => {
+                    input.disabled = false;
+                    input.classList.add('bg-gray-900', 'border-gray-600', 'px-1', 'rounded');
+                });
+            } else {
+                isCatEditingMode = false;
+                btn.innerText = "Edit CAT Marks";
+                btn.classList.remove('bg-emerald-600', 'text-white');
+                
+                document.querySelectorAll('.cat-score-input').forEach(input => {
+                    const mid = input.dataset.id;
+                    const targetModule = modules.find(m => m.id === mid);
+                    if(targetModule) targetModule.catScore = parseFloat(input.value) || 0;
+                });
+                document.querySelectorAll('.cat-max-input').forEach(input => {
+                    const mid = input.dataset.id;
+                    const targetModule = modules.find(m => m.id === mid);
+                    if(targetModule) targetModule.catMax = parseFloat(input.value) || 30;
                 });
 
                 localStorage.setItem('nursing_modules', JSON.stringify(modules));
@@ -318,7 +425,6 @@
             const readingData = sortedModules.map(m => m.pct);
             const recallData = sortedModules.map(m => m.revPct);
 
-            // Integrated Multi-Dataset Comparative Bar Chart Engine (Faded Recall Configuration)
             if (barChartInstance) {
                 barChartInstance.data.labels = labels;
                 barChartInstance.data.datasets[0].data = readingData;
@@ -334,13 +440,13 @@
                             {
                                 label: 'Reading Coverage %',
                                 data: readingData,
-                                backgroundColor: '#0ea5e9', // Crisp Cyan-Blue 
+                                backgroundColor: '#0ea5e9',
                                 borderRadius: 4,
                             },
                             {
                                 label: 'Recall / Revision %',
                                 data: recallData,
-                                backgroundColor: 'rgba(168, 85, 247, 0.25)', // Intentional fader transparency allocation
+                                backgroundColor: 'rgba(168, 85, 247, 0.25)',
                                 borderColor: 'rgba(168, 85, 247, 0.6)',
                                 borderWidth: 1,
                                 borderRadius: 4,
@@ -351,12 +457,7 @@
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { 
-                            legend: { 
-                                display: true,
-                                labels: { color: '#9ca3af', font: { size: 11 } }
-                            } 
-                        },
+                        plugins: { legend: { display: true, labels: { color: '#9ca3af', font: { size: 11 } } } },
                         scales: {
                             x: { max: 100, min: 0, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
                             y: { grid: { display: false }, ticks: { color: '#f3f4f6', font: { size: 9 } } }
@@ -365,7 +466,6 @@
                 });
             }
 
-            // Pie Chart rendering
             const pieDataHours = modules.map(m => getLogHoursByModuleName(m.name));
             const hasRegisteredLogs = pieDataHours.some(h => h > 0);
             const activePieData = hasRegisteredLogs ? pieDataHours : modules.map(() => 1); 
@@ -392,13 +492,122 @@
                             borderColor: '#0b0f19'
                         }]
                     },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            }
+
+            // Continuous Linear Log Matrix Data Parsing Engine
+            updateLineChart();
+        }
+
+        function updateLineChart() {
+            if (logs.length === 0) return;
+            
+            // Extract distinct timestamps sorted sequentially
+            const uniqueDates = [...new Set(logs.map(l => l.date))].sort();
+            if(uniqueDates.length === 0) return;
+
+            const dateMap = {};
+            const firstDate = new Date(uniqueDates[0]);
+            const lastDate = new Date(); // Extends baseline up to today
+            
+            // Ensure array scales iteratively through every missed day gaps
+            for (let d = new Date(firstDate); d <= lastDate; d.setDate(d.getDate() + 1)) {
+                const dateString = d.toISOString().split('T')[0];
+                dateMap[dateString] = 0;
+            }
+
+            // Overlay accumulated timeline velocities
+            logs.forEach(l => {
+                if (dateMap[l.date] !== undefined) {
+                    dateMap[l.date] += l.hours;
+                }
+            });
+
+            const sortedTimelineLabels = Object.keys(dateMap).sort();
+            const sortedTimelineValues = sortedTimelineLabels.map(k => dateMap[k]);
+
+            if (lineChartInstance) {
+                lineChartInstance.data.labels = sortedTimelineLabels;
+                lineChartInstance.data.datasets[0].data = sortedTimelineValues;
+                lineChartInstance.update();
+            } else {
+                const ctxLine = document.getElementById('lineChart').getContext('2d');
+                lineChartInstance = new Chart(ctxLine, {
+                    type: 'line',
+                    data: {
+                        labels: sortedTimelineLabels,
+                        datasets: [{
+                            label: 'Hours Studied',
+                            data: sortedTimelineValues,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                            fill: true,
+                            tension: 0.2,
+                            borderWidth: 2,
+                            pointBackgroundColor: '#06b6d4',
+                            pointRadius: 3
+                        }]
+                    },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } }
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#9ca3af', font: { size: 9 } } },
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }
+                        }
                     }
                 });
             }
+        }
+
+        function renderCatEvaluationMatrix() {
+            const body = document.getElementById('cat-matrix-body');
+            
+            const processedCatModules = modules.map(m => {
+                const catPercentage = m.catMax > 0 ? (m.catScore / m.catMax) * 100 : 0;
+                const catContributionToSem = (catPercentage / 100) * 30;
+                
+                // Final Paper Score Required calculation out of 100 to meet 75% 'A' threshold criteria
+                // Formula: (75 - CAT Contribution) / 0.70
+                let finalPaperNeeded = (75 - catContributionToSem) / 0.70;
+                if (finalPaperNeeded < 0) finalPaperNeeded = 0;
+
+                // Status Comment logic configuration mapping 
+                let comment = "Critical Read Required";
+                let colorClass = "text-red-400";
+                if(catPercentage >= 85) { comment = "Secure Core Standings"; colorClass = "text-blue-400"; }
+                else if(catPercentage >= 75) { comment = "Optimal Status; Maintain Speed"; colorClass = "text-emerald-400"; }
+                else if(catPercentage >= 60) { comment = "Expand Recall Drills"; colorClass = "text-orange-400"; }
+
+                return { ...m, catPercentage, catContributionToSem, finalPaperNeeded, comment, colorClass };
+            });
+
+            // Sort by performance variance (Highest obtained percentage targets first)
+            processedCatModules.sort((a, b) => b.catPercentage - a.catPercentage);
+
+            body.innerHTML = processedCatModules.map(m => `
+                <tr class="hover:bg-gray-900/30 transition-colors">
+                    <td class="p-4 font-semibold text-gray-200">
+                        <span class="text-xs text-cyan-400 block font-normal">${m.code}</span>
+                        ${m.name}
+                    </td>
+                    <td class="p-4 text-center">
+                        <input type="number" step="0.5" class="cat-score-input w-12 text-center font-bold bg-transparent focus:outline-none" data-id="${m.id}" value="${m.catScore}" disabled />
+                    </td>
+                    <td class="p-4 text-center text-gray-500 font-bold">
+                        <input type="number" class="cat-max-input w-12 text-center font-semibold bg-transparent text-gray-500 focus:outline-none" data-id="${m.id}" value="${m.catMax}" disabled />
+                    </td>
+                    <td class="p-4 text-center font-medium text-gray-300">${m.catContributionToSem.toFixed(1)} / 30</td>
+                    <td class="p-4 text-center">
+                        <span class="text-md font-black ${m.finalPaperNeeded > 100 ? 'text-red-500 animate-pulse' : 'text-amber-400'}">
+                            ${m.finalPaperNeeded > 100 ? 'Impossible (>100)' : m.finalPaperNeeded.toFixed(1) + '%'}
+                        </span>
+                    </td>
+                    <td class="p-4 pl-6 font-medium ${m.colorClass}">${m.comment}</td>
+                </tr>
+            `).join('');
         }
 
         function renderExamPredictions() {
@@ -441,6 +650,7 @@
         function renderUI() {
             calculateGlobalMetrics();
             updateCharts();
+            renderCatEvaluationMatrix();
             renderExamPredictions();
             renderLogsStream();
             
@@ -450,8 +660,6 @@
             container.innerHTML = sortedList.map(m => {
                 const readProfile = getColorProfile(m.pct);
                 const revProfile = getColorProfile(m.revPct);
-                
-                // Calculate prediction mean for current module insertion
                 const inlinePredictionMean = calculateSinglePredictiveMean(m);
 
                 return `
@@ -464,7 +672,6 @@
                                 </div>
                                 <h4 class="text-md font-bold text-white truncate">${m.name}</h4>
                             </div>
-                            
                             <div class="flex items-center space-x-2 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-1.5 self-end sm:self-auto">
                                 <span class="text-[10px] uppercase font-bold text-amber-500 tracking-wider">Pass Index:</span>
                                 <span class="text-sm font-black text-amber-400">${inlinePredictionMean} <span class="text-[10px] text-gray-500 font-normal">/9.0</span></span>
@@ -472,16 +679,11 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-800/40">
-                            
                             <div class="space-y-2">
                                 <div class="flex justify-between items-center text-xs">
                                     <span class="text-gray-400 font-medium uppercase tracking-wider">Reading Progress</span>
                                     <div class="flex items-center bg-gray-900/60 border border-gray-800/80 rounded-lg p-1">
-                                        <input type="number" 
-                                               class="pct-input w-12 bg-transparent text-right pr-0.5 font-bold text-white focus:outline-none"
-                                               data-id="${m.id}" 
-                                               value="${m.pct}" 
-                                               min="0" max="100" disabled>
+                                        <input type="number" class="pct-input w-12 bg-transparent text-right pr-0.5 font-bold text-white focus:outline-none" data-id="${m.id}" value="${m.pct}" min="0" max="100" disabled>
                                         <span class="text-[11px] text-gray-500 font-bold px-0.5">%</span>
                                     </div>
                                 </div>
@@ -494,11 +696,7 @@
                                 <div class="flex justify-between items-center text-xs">
                                     <span class="text-gray-400 font-medium uppercase tracking-wider">Recall / Revision Progress</span>
                                     <div class="flex items-center bg-gray-900/60 border border-gray-800/80 rounded-lg p-1">
-                                        <input type="number" 
-                                               class="rev-input w-12 bg-transparent text-right pr-0.5 font-bold text-white focus:outline-none"
-                                               data-id="${m.id}" 
-                                               value="${m.revPct}" 
-                                               min="0" max="100" disabled>
+                                        <input type="number" class="rev-input w-12 bg-transparent text-right pr-0.5 font-bold text-white focus:outline-none" data-id="${m.id}" value="${m.revPct}" min="0" max="100" disabled>
                                         <span class="text-[11px] text-gray-500 font-bold px-0.5">%</span>
                                     </div>
                                 </div>
@@ -506,7 +704,6 @@
                                     <div class="h-full transition-all duration-500" style="width: ${m.revPct}%; background-color: ${revProfile.hex}"></div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 `;
