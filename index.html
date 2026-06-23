@@ -44,7 +44,7 @@
                     <span id="global-pct" class="text-3xl font-black text-cyan-400">0.0%</span>
                 </div>
                 <div class="glass-card px-6 py-4 rounded-2xl flex flex-col items-end flex-1 md:flex-initial min-w-[160px]">
-                    <span class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Overall Recall</span>
+                    <span id="global-rev-label" class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Overall Recall</span>
                     <span id="global-rev" class="text-3xl font-black text-purple-400">0.0%</span>
                 </div>
             </div>
@@ -58,24 +58,24 @@
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
                         </span>
-                        Exam Calibration Benchmark Matrix
+                        Unified Milestone Offset Calibration Engine
                     </h3>
                     <p class="text-xs text-gray-400">
-                        Solid bar represents your current actual progress. Faded bar displays where you <span class="text-amber-400 font-semibold">logarithmically ought to be today</span> to secure a safe trajectory before <strong class="text-cyan-400">July 4th</strong>.
+                        Solid bar is actual progress. Faded bar shows your continuous baseline relative to the <span class="text-amber-400 font-semibold">June 28th Milestone (58% Composite)</span> running at <strong class="text-emerald-400">7.0% velocity per day</strong>.
                     </p>
                 </div>
                 <div class="flex gap-6 text-right">
                     <div>
                         <span id="days-remaining-badge" class="text-2xl font-black text-amber-400">--</span>
-                        <span class="text-xs text-gray-500 block">Days Left to Exam</span>
+                        <span class="text-xs text-gray-500 block">Days Left to Finals</span>
                     </div>
                     <div>
                         <span id="target-index-val" class="text-2xl font-black text-cyan-400">0.0%</span>
-                        <span class="text-xs text-gray-500 block">Actual Study Position</span>
+                        <span class="text-xs text-gray-500 block">Actual Position</span>
                     </div>
                     <div>
                         <span id="expected-index-val" class="text-2xl font-black text-amber-500/80">0.0%</span>
-                        <span class="text-xs text-gray-500 block">Logarithmic Milestone Target</span>
+                        <span class="text-xs text-gray-500 block">Continuous Baseline Target</span>
                     </div>
                 </div>
             </div>
@@ -229,7 +229,7 @@
             { id: "m10", code: "MSN 1208", name: "Neurological Nursing", hours: 15, pct: 0, revPct: 0, catScore: 27, catMax: 30 },
             { id: "m11", code: "MSN 1208", name: "Dermatological Nursing", hours: 10, pct: 0, revPct: 0, catScore: 0, catMax: 30 },
             { id: "m12", code: "MSN 1208", name: "Ophthalmic Nursing", hours: 10, pct: 0, revPct: 0, catScore: 0, catMax: 30 },
-            { id: "m13", code: "Gen 1202", name: "Gerontological Nursing", hours: 20, pct: 0, revPct: 0, catScore: 28, catMax: 30 },
+            { id: "m13", code: "Gen 1202", name: "Gerontological Nursing", hours: 20, px: 0, revPct: 0, catScore: 28, catMax: 30 },
             { id: "m14", code: "Pha 1203", name: "Pharmacology II", hours: 30, pct: 0, revPct: 0, catScore: 26, catMax: 30 }
         ];
 
@@ -297,47 +297,52 @@
             document.getElementById('global-pct').innerText = `${finalGlobalRead.toFixed(1)}%`;
             document.getElementById('global-rev').innerText = `${finalGlobalRev.toFixed(1)}%`;
 
-            // Explicit target tracking parameters for July 4th
-            const targetDate = new Date("2026-07-04");
+            // Setup Target Configuration Anchors
+            const milestoneDate = new Date("2026-06-28");
+            const finalTargetDate = new Date("2026-07-04");
+            
+            // Normalize dates to drop hour skew variations
             const today = new Date();
-            
-            // Set dynamic baseline to track total window space starting from first operational log entry
-            let startOfWindow = new Date("2026-05-15"); 
-            if(logs.length > 0) {
-                const chronologicalLogs = logs.map(l => new Date(l.date).getTime());
-                startOfWindow = new Date(Math.min(...chronologicalLogs));
-            }
+            today.setHours(0,0,0,0);
+            milestoneDate.setHours(0,0,0,0);
+            finalTargetDate.setHours(0,0,0,0);
 
-            const totalStudySpanDays = Math.max(1, Math.ceil((targetDate.getTime() - startOfWindow.getTime()) / (1000 * 3600 * 24)));
-            const currentDaysSpent = Math.max(0, Math.ceil((today.getTime() - startOfWindow.getTime()) / (1000 * 3600 * 24)));
-            
-            const timeDiffLeft = targetDate.getTime() - today.getTime();
+            // Remaining timeline span count
+            const timeDiffLeft = finalTargetDate.getTime() - today.getTime();
             let daysRemaining = Math.ceil(timeDiffLeft / (1000 * 3600 * 24));
             if (daysRemaining < 0) daysRemaining = 0;
-            
             document.getElementById('days-remaining-badge').innerText = daysRemaining;
 
-            // Direct progress mapping: strictly following target weighting criteria
-            const structuralProgressScore = (finalGlobalRead * 0.40) + (finalGlobalRev * 0.60);
-            document.getElementById('target-index-val').innerText = `${structuralProgressScore.toFixed(1)}%`;
+            // Actual progress mapping coordinates
+            const actualStructuralProgressScore = (finalGlobalRead * 0.40) + (finalGlobalRev * 0.60);
+            document.getElementById('target-index-val').innerText = `${actualStructuralProgressScore.toFixed(1)}%`;
+
+            // Milestone Baseline on June 28th (70% Read * 0.4 + 50% Recall * 0.6) = 58.0%
+            const milestoneCompositeTarget = 58.0; 
             
-            // Logarithmic Standard Target curve estimation formula:
-            // Ensures progress acceleration expectation mirrors heavy late-cycle revisions
-            let progressRatio = currentDaysSpent / totalStudySpanDays;
-            if(progressRatio > 1) progressRatio = 1;
-            if(progressRatio <= 0) progressRatio = 0.01;
+            // Post-Milestone Run Rate Target Velocity (From June 28 to July 4 = 6 days to clear remainder from 58% to 100%)
+            const dailyVelocityFactor = (100.0 - milestoneCompositeTarget) / 6.0; // Evaluates precisely to 7.0% progress needed per day
 
-            const expectedLogarithmicTarget = Math.min(100, Math.max(0, (Math.log(progressRatio * 9 + 1) / Math.log(10)) * 100));
-            document.getElementById('expected-index-val').innerText = `${expectedLogarithmicTarget.toFixed(1)}%`;
+            // Calculate precise difference gap from anchor date (June 28)
+            const msPerDay = 1000 * 60 * 60 * 24;
+            const dayOffsetFromMilestone = (today.getTime() - milestoneDate.getTime()) / msPerDay;
 
-            // Adjust main foreground actual bar indicators
+            // Unified mathematical equation applies dynamic offset delta shift automatically
+            let continuousStandardizedTarget = milestoneCompositeTarget + (dayOffsetFromMilestone * dailyVelocityFactor);
+            
+            // Hard bounding controls
+            if (continuousStandardizedTarget > 100) continuousStandardizedTarget = 100;
+            if (continuousStandardizedTarget < 0) continuousStandardizedTarget = 0;
+
+            document.getElementById('expected-index-val').innerText = `${continuousStandardizedTarget.toFixed(1)}%`;
+
+            // Update physical bar components
             const actualProgressBar = document.getElementById('target-index-bar');
-            actualProgressBar.style.width = `${structuralProgressScore}%`;
-            actualProgressBar.style.backgroundColor = getColorProfile(structuralProgressScore).hex;
+            actualProgressBar.style.width = `${actualStructuralProgressScore}%`;
+            actualProgressBar.style.backgroundColor = getColorProfile(actualStructuralProgressScore).hex;
 
-            // Render background target overlay boundary
             const backgroundTargetBar = document.getElementById('expected-target-bar');
-            backgroundTargetBar.style.width = `${expectedLogarithmicTarget}%`;
+            backgroundTargetBar.style.width = `${continuousStandardizedTarget}%`;
         }
 
         function toggleGlobalEdit() {
@@ -468,7 +473,6 @@
         }
 
         function updateCharts() {
-            // Sorting strategy maps directly via core custom criteria performance index: 60% Active Recall / 40% Reading
             const sortedModules = [...modules].sort((a, b) => {
                 const profileA = (a.revPct * 0.60) + (a.pct * 0.40);
                 const profileB = (b.revPct * 0.60) + (b.pct * 0.40);
@@ -650,7 +654,6 @@
                 return { ...m, catPercentage, catContributionToSem, finalPaperNeeded, performanceComment, colorClass, inlinePassIndex, effortComment, effortColor };
             });
 
-            // Sort systematically by highest CAT score percentage obtained first
             processedCatModules.sort((a, b) => b.catPercentage - a.catPercentage);
 
             body.innerHTML = processedCatModules.map(m => `
@@ -693,7 +696,6 @@
                 return { ...m, finalScore: finalIndexScore, ranking, badgeColor };
             });
 
-            // Sort dashboard columns directly via custom evaluation profile standard (60% Active Recall / 40% Read)
             modulesWithPerformance.sort((a, b) => {
                 const scoreA = (a.revPct * 0.60) + (a.pct * 0.40);
                 const scoreB = (b.revPct * 0.60) + (b.pct * 0.40);
@@ -727,7 +729,6 @@
             renderExamPredictions();
             renderLogsStream();
             
-            // Primary lists explicitly sorted via custom evaluation layout standard (60% Active Recall / 40% Read)
             const sortedList = [...modules].sort((a, b) => {
                 const scoreA = (a.revPct * 0.60) + (a.pct * 0.40);
                 const scoreB = (b.revPct * 0.60) + (b.pct * 0.40);
