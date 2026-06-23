@@ -51,24 +51,32 @@
         </header>
 
         <section class="glass-card p-6 rounded-2xl shadow-xl space-y-3">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h3 class="text-lg font-bold text-white flex items-center gap-2">
                         <span class="flex h-3 w-3 relative">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                         </span>
-                        Exam Countdown Target Index (Target: 92.8% by June 4th)
+                        Active Linear Time-Decay Index
                     </h3>
-                    <p class="text-xs text-gray-400">Weighted Matrix blending: 40% Reading Coverage + 60% Active Recall Index against target milestones (97% Read / 90% Recalled).</p>
+                    <p class="text-xs text-gray-400">
+                        Penalizes score automatically every 24 hours as time diminishes. If your progress stands still, your score drops. Target: <strong class="text-amber-400">June 4th deadline</strong>.
+                    </p>
                 </div>
-                <div class="text-right">
-                    <span id="target-index-val" class="text-2xl font-black text-cyan-400">0.0%</span>
-                    <span class="text-xs text-gray-500 block">Current Unified Standing</span>
+                <div class="flex gap-6 text-right">
+                    <div>
+                        <span id="days-remaining-badge" class="text-2xl font-black text-amber-400">--</span>
+                        <span class="text-xs text-gray-500 block">Days Left to Target</span>
+                    </div>
+                    <div>
+                        <span id="target-index-val" class="text-2xl font-black text-cyan-400">0.0%</span>
+                        <span class="text-xs text-gray-500 block">Time-Diminished Value</span>
+                    </div>
                 </div>
             </div>
             <div class="w-full bg-gray-950 h-5 rounded-full p-1 overflow-hidden border border-gray-800">
-                <div id="target-index-bar" class="h-full rounded-full transition-all duration-700 style='width: 0%'"></div>
+                <div id="target-index-bar" class="h-full rounded-full transition-all duration-700" style="width: 0%"></div>
             </div>
         </section>
 
@@ -86,7 +94,7 @@
             <div class="glass-card p-6 rounded-2xl shadow-2xl flex flex-col justify-between">
                 <div class="mb-4">
                     <h3 class="text-xl font-bold text-white">Curriculum Comparison Chart</h3>
-                    <p class="text-xs text-gray-400">Side-by-side verification: Solid Reading vs Faded Recall profiles</p>
+                    <p class="text-xs text-gray-400">Sorted by Pass Index Performance profile: 60% Active Recall / 40% Reading Coverage</p>
                 </div>
                 <div class="relative w-full h-[340px]">
                     <canvas id="barChart"></canvas>
@@ -154,25 +162,27 @@
         </main>
 
         <section class="glass-card p-6 rounded-2xl shadow-2xl">
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                 <div>
                     <h2 class="text-2xl font-bold bg-gradient-to-r from-teal-400 to-emerald-400 bg-clip-text text-transparent">Continuous Assessment Test (CAT) Evaluation Matrix</h2>
-                    <p class="text-xs text-gray-400 mt-1">Calculates Sem Paper requirements out of 100 to strike an aggregate 75% 'A' boundary score (CAT accounts for 30%, Exam 70%). Sorted by performance variance.</p>
+                    <p class="text-xs text-gray-400 mt-1">Calculates written final requirements out of 100 to strike an aggregate 75% 'A' boundary score (CAT accounts for 30%, Exam 70%). Sorted by highest CAT score.</p>
                 </div>
                 <button id="toggle-cat-btn" onclick="toggleCatEdit()" class="px-5 py-2 rounded-xl bg-gray-800 text-gray-200 border border-gray-700 font-semibold hover:bg-gray-700 text-xs transition cursor-pointer">
                     Edit CAT Marks
                 </button>
             </div>
             <div class="overflow-x-auto rounded-xl border border-gray-800">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse min-w-[900px]">
                     <thead>
                         <tr class="bg-gray-900/80 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
                             <th class="p-4">Module Code/Name</th>
                             <th class="p-4 text-center">Score obtained</th>
                             <th class="p-4 text-center">Out Of</th>
                             <th class="p-4 text-center">CAT Weight (30%)</th>
-                            <th class="p-4 text-center">Exam Mark Needed (/100) for A</th>
-                            <th class="p-4 pl-6">Status Comment Directive</th>
+                            <th class="p-4 text-center">Pass Index (/9.0)</th>
+                            <th class="p-4 text-center">Exam Paper Needed (/100) for A</th>
+                            <th class="p-4 pl-6">Performance Comment</th>
+                            <th class="p-4 pl-6">Effort Allocation Check</th>
                         </tr>
                     </thead>
                     <tbody id="cat-matrix-body" class="divide-y divide-gray-800/60 text-sm">
@@ -220,7 +230,6 @@
         let modules = JSON.parse(localStorage.getItem('nursing_modules')) || initialModules;
         let logs = JSON.parse(localStorage.getItem('nursing_logs')) || [];
         
-        // Safety initialization migration layers to safely absorb new properties without breaking existing records
         modules.forEach(m => { 
             if(m.revPct === undefined) m.revPct = 0; 
             if(m.catScore === undefined) {
@@ -239,12 +248,12 @@
         document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
 
         function getColorProfile(pct) {
-            if (pct >= 95) return { hex: '#3b82f6', text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' }; // Blue
-            if (pct >= 80) return { hex: '#065f46', text: 'text-emerald-500', bg: 'bg-emerald-900/20', border: 'border-emerald-800/40' }; // Dark Green
-            if (pct >= 65) return { hex: '#10b981', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }; // Green
-            if (pct >= 50) return { hex: '#f97316', text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' }; // Orange
-            if (pct >= 20) return { hex: '#ef4444', text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' }; // Red
-            return { hex: '#991b1b', text: 'text-red-700', bg: 'bg-red-950/30', border: 'border-red-900/40' }; // Dark Red
+            if (pct >= 95) return { hex: '#3b82f6', text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' };
+            if (pct >= 80) return { hex: '#065f46', text: 'text-emerald-500', bg: 'bg-emerald-900/20', border: 'border-emerald-800/40' };
+            if (pct >= 65) return { hex: '#10b981', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
+            if (pct >= 50) return { hex: '#f97316', text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' };
+            if (pct >= 20) return { hex: '#ef4444', text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' };
+            return { hex: '#991b1b', text: 'text-red-700', bg: 'bg-red-950/30', border: 'border-red-900/40' };
         }
 
         function calculateSinglePredictiveMean(m) {
@@ -283,13 +292,41 @@
             document.getElementById('global-pct').innerText = `${finalGlobalRead.toFixed(1)}%`;
             document.getElementById('global-rev').innerText = `${finalGlobalRev.toFixed(1)}%`;
 
-            // Unified Progress Index calculation: (40% Read standing + 60% Recall standing)
-            const trackingIndexScore = (finalGlobalRead * 0.40) + (finalGlobalRev * 0.60);
-            document.getElementById('target-index-val').innerText = `${trackingIndexScore.toFixed(1)}%`;
+            // Setup Target Boundaries
+            const targetDate = new Date("2026-06-04");
+            const today = new Date();
+            
+            // Calculate baseline total study window starting from the oldest log entry (fallback to 14 days ago)
+            let baseStartDate = new Date();
+            baseStartDate.setDate(baseStartDate.getDate() - 14);
+            if(logs.length > 0) {
+                const legacyDates = logs.map(l => new Date(l.date).getTime());
+                baseStartDate = new Date(Math.min(...legacyDates));
+            }
+
+            const totalTimelineWindow = Math.max(1, Math.ceil((targetDate.getTime() - baseStartDate.getTime()) / (1000 * 3600 * 24)));
+            const timeDiffLeft = targetDate.getTime() - today.getTime();
+            let daysRemaining = Math.ceil(timeDiffLeft / (1000 * 3600 * 24));
+            if (daysRemaining < 0) daysRemaining = 0;
+            
+            document.getElementById('days-remaining-badge').innerText = daysRemaining;
+
+            // Structural progress following requested composite standard (40% Read / 60% Recall)
+            const structuralProgressScore = (finalGlobalRead * 0.40) + (finalGlobalRev * 0.60);
+            
+            // Linear Time-Decay Factor: As daysRemaining shrinks relative to total window, score diminishes if progress is stationary
+            let timeRatio = daysRemaining / totalTimelineWindow;
+            if(timeRatio > 1) timeRatio = 1;
+            if(timeRatio < 0) timeRatio = 0;
+
+            // If progress isn't 100%, the remaining path is actively compressed by time depletion
+            const finalTimeDecayIndexScore = Math.max(0, Math.min(structuralProgressScore * (0.5 + (timeRatio * 0.5)), 100));
+
+            document.getElementById('target-index-val').innerText = `${finalTimeDecayIndexScore.toFixed(1)}%`;
             
             const trackingIndexBar = document.getElementById('target-index-bar');
-            trackingIndexBar.style.width = `${Math.min(trackingIndexScore, 100)}%`;
-            trackingIndexBar.style.backgroundColor = getColorProfile(trackingIndexScore).hex;
+            trackingIndexBar.style.width = `${finalTimeDecayIndexScore}%`;
+            trackingIndexBar.style.backgroundColor = getColorProfile(finalTimeDecayIndexScore).hex;
         }
 
         function toggleGlobalEdit() {
@@ -420,7 +457,13 @@
         }
 
         function updateCharts() {
-            const sortedModules = [...modules].sort((a, b) => b.pct - a.pct);
+            // Sort modules based completely on custom composite weight criteria: 60% Recall / 40% Read
+            const sortedModules = [...modules].sort((a, b) => {
+                const profileA = (a.revPct * 0.60) + (a.pct * 0.40);
+                const profileB = (b.revPct * 0.60) + (b.pct * 0.40);
+                return profileB - profileA;
+            });
+
             const labels = sortedModules.map(m => m.name);
             const readingData = sortedModules.map(m => m.pct);
             const recallData = sortedModules.map(m => m.revPct);
@@ -496,28 +539,23 @@
                 });
             }
 
-            // Continuous Linear Log Matrix Data Parsing Engine
             updateLineChart();
         }
 
         function updateLineChart() {
             if (logs.length === 0) return;
-            
-            // Extract distinct timestamps sorted sequentially
             const uniqueDates = [...new Set(logs.map(l => l.date))].sort();
             if(uniqueDates.length === 0) return;
 
             const dateMap = {};
             const firstDate = new Date(uniqueDates[0]);
-            const lastDate = new Date(); // Extends baseline up to today
+            const lastDate = new Date();
             
-            // Ensure array scales iteratively through every missed day gaps
             for (let d = new Date(firstDate); d <= lastDate; d.setDate(d.getDate() + 1)) {
                 const dateString = d.toISOString().split('T')[0];
                 dateMap[dateString] = 0;
             }
 
-            // Overlay accumulated timeline velocities
             logs.forEach(l => {
                 if (dateMap[l.date] !== undefined) {
                     dateMap[l.date] += l.hours;
@@ -569,22 +607,39 @@
                 const catPercentage = m.catMax > 0 ? (m.catScore / m.catMax) * 100 : 0;
                 const catContributionToSem = (catPercentage / 100) * 30;
                 
-                // Final Paper Score Required calculation out of 100 to meet 75% 'A' threshold criteria
-                // Formula: (75 - CAT Contribution) / 0.70
                 let finalPaperNeeded = (75 - catContributionToSem) / 0.70;
                 if (finalPaperNeeded < 0) finalPaperNeeded = 0;
 
-                // Status Comment logic configuration mapping 
-                let comment = "Critical Read Required";
-                let colorClass = "text-red-400";
-                if(catPercentage >= 85) { comment = "Secure Core Standings"; colorClass = "text-blue-400"; }
-                else if(catPercentage >= 75) { comment = "Optimal Status; Maintain Speed"; colorClass = "text-emerald-400"; }
-                else if(catPercentage >= 60) { comment = "Expand Recall Drills"; colorClass = "text-orange-400"; }
+                const inlinePassIndex = calculateSinglePredictiveMean(m);
 
-                return { ...m, catPercentage, catContributionToSem, finalPaperNeeded, comment, colorClass };
+                let performanceComment = "Critical Read Required";
+                let colorClass = "text-red-400";
+                if(catPercentage >= 85) { performanceComment = "Secure Core Standings"; colorClass = "text-blue-400"; }
+                else if(catPercentage >= 75) { performanceComment = "Optimal Status; Maintain Speed"; colorClass = "text-emerald-400"; }
+                else if(catPercentage >= 60) { performanceComment = "Expand Recall Drills"; colorClass = "text-orange-400"; }
+
+                const totalHoursLogged = getLogHoursByModuleName(m.name);
+                let effortComment = "Needs Core Setup";
+                let effortColor = "text-red-400";
+
+                if (catPercentage >= 75 && totalHoursLogged < 3) {
+                    effortComment = "Coasting (High Mark / Low Hours)";
+                    effortColor = "text-amber-400";
+                } else if (inlinePassIndex >= 6.5) {
+                    effortComment = "Excellent Effort Input";
+                    effortColor = "text-emerald-400";
+                } else if (totalHoursLogged >= 6) {
+                    effortComment = "High Input / Optimization Pending";
+                    effortColor = "text-cyan-400";
+                } else if (totalHoursLogged > 0) {
+                    effortComment = "Insufficient Revision Velocity";
+                    effortColor = "text-orange-400";
+                }
+
+                return { ...m, catPercentage, catContributionToSem, finalPaperNeeded, performanceComment, colorClass, inlinePassIndex, effortComment, effortColor };
             });
 
-            // Sort by performance variance (Highest obtained percentage targets first)
+            // Sort systematically by highest CAT score percentage obtained first
             processedCatModules.sort((a, b) => b.catPercentage - a.catPercentage);
 
             body.innerHTML = processedCatModules.map(m => `
@@ -600,12 +655,14 @@
                         <input type="number" class="cat-max-input w-12 text-center font-semibold bg-transparent text-gray-500 focus:outline-none" data-id="${m.id}" value="${m.catMax}" disabled />
                     </td>
                     <td class="p-4 text-center font-medium text-gray-300">${m.catContributionToSem.toFixed(1)} / 30</td>
+                    <td class="p-4 text-center font-bold text-amber-400">${m.inlinePassIndex}</td>
                     <td class="p-4 text-center">
-                        <span class="text-md font-black ${m.finalPaperNeeded > 100 ? 'text-red-500 animate-pulse' : 'text-amber-400'}">
+                        <span class="text-md font-black ${m.finalPaperNeeded > 100 ? 'text-red-500 animate-pulse' : 'text-emerald-400'}">
                             ${m.finalPaperNeeded > 100 ? 'Impossible (>100)' : m.finalPaperNeeded.toFixed(1) + '%'}
                         </span>
                     </td>
-                    <td class="p-4 pl-6 font-medium ${m.colorClass}">${m.comment}</td>
+                    <td class="p-4 pl-6 font-medium ${m.colorClass}">${m.performanceComment}</td>
+                    <td class="p-4 pl-6 font-semibold ${m.effortColor}">${m.effortComment}</td>
                 </tr>
             `).join('');
         }
@@ -625,7 +682,12 @@
                 return { ...m, finalScore: finalIndexScore, ranking, badgeColor };
             });
 
-            modulesWithPerformance.sort((a, b) => b.finalScore - a.finalScore);
+            // Sort container items strictly by custom composite weighted performance criteria (60% Recall / 40% Read)
+            modulesWithPerformance.sort((a, b) => {
+                const scoreA = (a.revPct * 0.60) + (a.pct * 0.40);
+                const scoreB = (b.revPct * 0.60) + (b.pct * 0.40);
+                return scoreB - scoreA;
+            });
 
             container.innerHTML = modulesWithPerformance.map(m => `
                 <div class="p-4 bg-gray-900/40 rounded-xl border border-gray-800 flex flex-col justify-between space-y-3">
@@ -654,7 +716,13 @@
             renderExamPredictions();
             renderLogsStream();
             
-            const sortedList = [...modules].sort((a, b) => b.pct - a.pct);
+            // Sort primary interface containers strictly by composite standard profile: 60% Recall / 40% Reading
+            const sortedList = [...modules].sort((a, b) => {
+                const scoreA = (a.revPct * 0.60) + (a.pct * 0.40);
+                const scoreB = (b.revPct * 0.60) + (b.pct * 0.40);
+                return scoreB - scoreA;
+            });
+
             const container = document.getElementById('modules-container');
 
             container.innerHTML = sortedList.map(m => {
