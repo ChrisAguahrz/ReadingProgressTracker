@@ -44,7 +44,7 @@
                     <span id="global-pct" class="text-3xl font-black text-cyan-400">0.0%</span>
                 </div>
                 <div class="glass-card px-6 py-4 rounded-2xl flex flex-col items-end flex-1 md:flex-initial min-w-[160px]">
-                    <span id="global-rev-label" class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Overall Recall</span>
+                    <span class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Overall Recall</span>
                     <span id="global-rev" class="text-3xl font-black text-purple-400">0.0%</span>
                 </div>
             </div>
@@ -61,7 +61,7 @@
                         Unified Milestone Offset Calibration Engine
                     </h3>
                     <p class="text-xs text-gray-400">
-                        Solid bar is actual progress. Faded bar shows your continuous baseline relative to the <span class="text-amber-400 font-semibold">June 28th Milestone (58% Composite)</span> running at <strong class="text-emerald-400">7.0% velocity per day</strong>.
+                        Solid bar is actual progress. Faded bar shows your continuous baseline relative to the <span class="text-amber-400 font-semibold">June 28th Milestone (58% Composite)</span> scaling at <strong class="text-emerald-400">5.25% velocity per day</strong> toward <strong class="text-cyan-400">July 6th Finals</strong>.
                     </p>
                 </div>
                 <div class="flex gap-6 text-right">
@@ -100,7 +100,7 @@
             <div class="glass-card p-6 rounded-2xl shadow-2xl flex flex-col justify-between">
                 <div class="mb-4">
                     <h3 class="text-xl font-bold text-white">Curriculum Comparison Chart</h3>
-                    <p class="text-xs text-gray-400">Sorted by Pass Index Performance profile: 60% Active Recall / 40% Reading Coverage</p>
+                    <p class="text-xs text-gray-400">Sorted by Pass Index Performance profile: Balanced Composite Curve Weightings</p>
                 </div>
                 <div class="relative w-full h-[340px]">
                     <canvas id="barChart"></canvas>
@@ -203,10 +203,10 @@
                 <div class="text-xs text-gray-400 mt-2 space-y-1 bg-gray-900/40 p-3 rounded-xl border border-gray-800/80">
                     <p class="font-semibold text-gray-300">Balanced Formula Allocation Weights (Capped at 9.0/10.0 Maximum Constraint):</p>
                     <ul class="list-disc pl-4 space-y-0.5 text-gray-400">
-                        <li><strong class="text-purple-400">40% Weight:</strong> Active Recall & Revision Progress Depth</li>
+                        <li><strong class="text-purple-400">47% Weight:</strong> Active Recall & Revision Progress Depth</li>
                         <li><strong class="text-cyan-400">35% Weight:</strong> Reading Module Coverage Depth</li>
-                        <li><strong class="text-emerald-400">20% Weight:</strong> Reading Study Velocity (Total Hours Logged)</li>
-                        <li><strong class="text-amber-500">5% Weight:</strong> Per Capita Study Profile Index</li>
+                        <li><strong class="text-emerald-400">8% Weight:</strong> Reading Study Velocity (Total Hours Logged)</li>
+                        <li><strong class="text-amber-500">10% Weight:</strong> Per Capita Study Profile Index</li>
                     </ul>
                 </div>
             </div>
@@ -229,7 +229,7 @@
             { id: "m10", code: "MSN 1208", name: "Neurological Nursing", hours: 15, pct: 0, revPct: 0, catScore: 27, catMax: 30 },
             { id: "m11", code: "MSN 1208", name: "Dermatological Nursing", hours: 10, pct: 0, revPct: 0, catScore: 0, catMax: 30 },
             { id: "m12", code: "MSN 1208", name: "Ophthalmic Nursing", hours: 10, pct: 0, revPct: 0, catScore: 0, catMax: 30 },
-            { id: "m13", code: "Gen 1202", name: "Gerontological Nursing", hours: 20, px: 0, revPct: 0, catScore: 28, catMax: 30 },
+            { id: "m13", code: "Gen 1202", name: "Gerontological Nursing", hours: 20, pct: 0, revPct: 0, catScore: 28, catMax: 30 },
             { id: "m14", code: "Pha 1203", name: "Pharmacology II", hours: 30, pct: 0, revPct: 0, catScore: 26, catMax: 30 }
         ];
 
@@ -273,10 +273,10 @@
             if(scorePerCapita > 9) scorePerCapita = 9;
 
             return parseFloat((
-                (scoreRecall * 0.40) + 
+                (scoreRecall * 0.47) + 
                 (scoreReading * 0.35) + 
-                (scoreVelocity * 0.20) + 
-                (scorePerCapita * 0.05)
+                (scoreVelocity * 0.08) + 
+                (scorePerCapita * 0.10)
             ).toFixed(2));
         }
 
@@ -297,46 +297,45 @@
             document.getElementById('global-pct').innerText = `${finalGlobalRead.toFixed(1)}%`;
             document.getElementById('global-rev').innerText = `${finalGlobalRev.toFixed(1)}%`;
 
-            // Setup Target Configuration Anchors
+            // Updated Target Configuration Anchors (June 28th and July 6th)
             const milestoneDate = new Date("2026-06-28");
-            const finalTargetDate = new Date("2026-07-04");
+            const finalTargetDate = new Date("2026-07-06");
             
-            // Normalize dates to drop hour skew variations
             const today = new Date();
             today.setHours(0,0,0,0);
             milestoneDate.setHours(0,0,0,0);
             finalTargetDate.setHours(0,0,0,0);
 
-            // Remaining timeline span count
+            // Remaining timeline span count to July 6th Final Exams
             const timeDiffLeft = finalTargetDate.getTime() - today.getTime();
             let daysRemaining = Math.ceil(timeDiffLeft / (1000 * 3600 * 24));
             if (daysRemaining < 0) daysRemaining = 0;
             document.getElementById('days-remaining-badge').innerText = daysRemaining;
 
-            // Actual progress mapping coordinates
-            const actualStructuralProgressScore = (finalGlobalRead * 0.40) + (finalGlobalRev * 0.60);
+            // Composite Actual Profile Progress Mapping Score
+            const actualStructuralProgressScore = (finalGlobalRead * 0.35) + (finalGlobalRev * 0.47);
             document.getElementById('target-index-val').innerText = `${actualStructuralProgressScore.toFixed(1)}%`;
 
-            // Milestone Baseline on June 28th (70% Read * 0.4 + 50% Recall * 0.6) = 58.0%
-            const milestoneCompositeTarget = 58.0; 
+            // Balanced Anchor baseline target for June 28th: (70% Read * 0.35 + 50% Recall * 0.47) = 48.0%
+            const milestoneCompositeTarget = (70 * 0.35) + (50 * 0.47); // Precisely 48.0%
             
-            // Post-Milestone Run Rate Target Velocity (From June 28 to July 4 = 6 days to clear remainder from 58% to 100%)
-            const dailyVelocityFactor = (100.0 - milestoneCompositeTarget) / 6.0; // Evaluates precisely to 7.0% progress needed per day
+            // Post-Milestone velocity calibration scale run rate (June 28 to July 6 = 8 days runway remaining to reach 100% full depth)
+            const overallRemainingTargetSpace = 100.0 - milestoneCompositeTarget; // 52.0% progress left
+            const dailyVelocityFactor = overallRemainingTargetSpace / 8.0; // Precisely 6.5% progress score scale requirement per day
 
-            // Calculate precise difference gap from anchor date (June 28)
+            // Dynamic day-offset evaluation equation tracking matrix
             const msPerDay = 1000 * 60 * 60 * 24;
             const dayOffsetFromMilestone = (today.getTime() - milestoneDate.getTime()) / msPerDay;
 
-            // Unified mathematical equation applies dynamic offset delta shift automatically
+            // Consolidated standardized target curve maps accurately regardless of date coordinates
             let continuousStandardizedTarget = milestoneCompositeTarget + (dayOffsetFromMilestone * dailyVelocityFactor);
             
-            // Hard bounding controls
             if (continuousStandardizedTarget > 100) continuousStandardizedTarget = 100;
             if (continuousStandardizedTarget < 0) continuousStandardizedTarget = 0;
 
             document.getElementById('expected-index-val').innerText = `${continuousStandardizedTarget.toFixed(1)}%`;
 
-            // Update physical bar components
+            // Adjust bar interface dimensions
             const actualProgressBar = document.getElementById('target-index-bar');
             actualProgressBar.style.width = `${actualStructuralProgressScore}%`;
             actualProgressBar.style.backgroundColor = getColorProfile(actualStructuralProgressScore).hex;
@@ -474,8 +473,8 @@
 
         function updateCharts() {
             const sortedModules = [...modules].sort((a, b) => {
-                const profileA = (a.revPct * 0.60) + (a.pct * 0.40);
-                const profileB = (b.revPct * 0.60) + (b.pct * 0.40);
+                const profileA = (a.revPct * 0.47) + (a.pct * 0.35);
+                const profileB = (b.revPct * 0.47) + (b.pct * 0.35);
                 return profileB - profileA;
             });
 
@@ -697,8 +696,8 @@
             });
 
             modulesWithPerformance.sort((a, b) => {
-                const scoreA = (a.revPct * 0.60) + (a.pct * 0.40);
-                const scoreB = (b.revPct * 0.60) + (b.pct * 0.40);
+                const scoreA = (a.revPct * 0.47) + (a.pct * 0.35);
+                const scoreB = (b.revPct * 0.47) + (b.pct * 0.35);
                 return scoreB - scoreA;
             });
 
@@ -730,8 +729,8 @@
             renderLogsStream();
             
             const sortedList = [...modules].sort((a, b) => {
-                const scoreA = (a.revPct * 0.60) + (a.pct * 0.40);
-                const scoreB = (b.revPct * 0.60) + (b.pct * 0.40);
+                const scoreA = (a.revPct * 0.47) + (a.pct * 0.35);
+                const scoreB = (b.revPct * 0.47) + (b.pct * 0.35);
                 return scoreB - scoreA;
             });
 
