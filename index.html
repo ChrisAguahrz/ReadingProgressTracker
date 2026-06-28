@@ -61,7 +61,7 @@
                         Unified Milestone Offset Calibration Engine
                     </h3>
                     <p class="text-xs text-gray-400">
-                        Solid bar is actual progress. Faded bar shows your continuous baseline relative to the <span class="text-amber-400 font-semibold">June 28th Milestone (58% Composite)</span> scaling at <strong class="text-emerald-400">5.25% velocity per day</strong> toward <strong class="text-cyan-400">July 6th Finals</strong>.
+                        Solid bar is actual progress. Faded bar shows your continuous baseline relative to the <span class="text-amber-400 font-semibold">June 28th Milestone (48% Benchmark)</span> scaling at <strong class="text-emerald-400">6.5% velocity per day</strong> toward <strong class="text-cyan-400">July 6th Finals</strong>.
                     </p>
                 </div>
                 <div class="flex gap-6 text-right">
@@ -297,7 +297,7 @@
             document.getElementById('global-pct').innerText = `${finalGlobalRead.toFixed(1)}%`;
             document.getElementById('global-rev').innerText = `${finalGlobalRev.toFixed(1)}%`;
 
-            // Updated Target Configuration Anchors (June 28th and July 6th)
+            // Timeline Anchors
             const milestoneDate = new Date("2026-06-28");
             const finalTargetDate = new Date("2026-07-06");
             
@@ -306,28 +306,25 @@
             milestoneDate.setHours(0,0,0,0);
             finalTargetDate.setHours(0,0,0,0);
 
-            // Remaining timeline span count to July 6th Final Exams
             const timeDiffLeft = finalTargetDate.getTime() - today.getTime();
             let daysRemaining = Math.ceil(timeDiffLeft / (1000 * 3600 * 24));
             if (daysRemaining < 0) daysRemaining = 0;
             document.getElementById('days-remaining-badge').innerText = daysRemaining;
 
-            // Composite Actual Profile Progress Mapping Score
-            const actualStructuralProgressScore = (finalGlobalRead * 0.35) + (finalGlobalRev * 0.47);
+            // ACTUAL POSITION FORMULA: Clean absolute average of read + recall progress
+            const actualStructuralProgressScore = (finalGlobalRead + finalGlobalRev) / 2;
             document.getElementById('target-index-val').innerText = `${actualStructuralProgressScore.toFixed(1)}%`;
 
-            // Balanced Anchor baseline target for June 28th: (70% Read * 0.35 + 50% Recall * 0.47) = 48.0%
-            const milestoneCompositeTarget = (70 * 0.35) + (50 * 0.47); // Precisely 48.0%
+            // Milestone Baseline Target on June 28 (48% Benchmark Target)
+            const milestoneCompositeTarget = 48.0; 
             
-            // Post-Milestone velocity calibration scale run rate (June 28 to July 6 = 8 days runway remaining to reach 100% full depth)
-            const overallRemainingTargetSpace = 100.0 - milestoneCompositeTarget; // 52.0% progress left
-            const dailyVelocityFactor = overallRemainingTargetSpace / 8.0; // Precisely 6.5% progress score scale requirement per day
+            // Post-Milestone velocity runway calibration: June 28 to July 6 = 8 days to scale from 48% to 100%
+            const overallRemainingTargetSpace = 100.0 - milestoneCompositeTarget; // 52.0% left
+            const dailyVelocityFactor = overallRemainingTargetSpace / 8.0; // 6.5% per day
 
-            // Dynamic day-offset evaluation equation tracking matrix
             const msPerDay = 1000 * 60 * 60 * 24;
             const dayOffsetFromMilestone = (today.getTime() - milestoneDate.getTime()) / msPerDay;
 
-            // Consolidated standardized target curve maps accurately regardless of date coordinates
             let continuousStandardizedTarget = milestoneCompositeTarget + (dayOffsetFromMilestone * dailyVelocityFactor);
             
             if (continuousStandardizedTarget > 100) continuousStandardizedTarget = 100;
@@ -335,7 +332,6 @@
 
             document.getElementById('expected-index-val').innerText = `${continuousStandardizedTarget.toFixed(1)}%`;
 
-            // Adjust bar interface dimensions
             const actualProgressBar = document.getElementById('target-index-bar');
             actualProgressBar.style.width = `${actualStructuralProgressScore}%`;
             actualProgressBar.style.backgroundColor = getColorProfile(actualStructuralProgressScore).hex;
